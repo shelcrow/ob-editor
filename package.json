@@ -5,8 +5,7 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint",
-    "gh-pages": "vue-cli-service gh-pages"
+    "lint": "vue-cli-service lint"
   },
   "dependencies": {
     "bootstrap": "^4.3.1",
