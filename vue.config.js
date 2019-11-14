@@ -1,4 +1,4 @@
 module.exports = {
     lintOnSave: false,
-    publicPath: '/ob-editor'
+    publicPath: '/ob-editor/'
 }
