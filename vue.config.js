@@ -1,4 +1,6 @@
 module.exports = {
     lintOnSave: false,
-    publicPath: '/ob-editor/'
+    publicPath: process.env.NODE_ENV === 'production'
+    ? '/my-project/'
+    : '/'
 }
