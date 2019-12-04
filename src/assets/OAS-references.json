@@ -1,15 +1,5 @@
 {
   "openapi": "3.0.0",
-  "servers": [
-    {
-      "description": "SwaggerHub API Auto Mocking",
-      "url": "https://virtserver.swaggerhub.com/sheldon_sunspec/OB2-Simplified/1.0.0"
-    },
-    {
-      "description": "SwaggerHub API Auto Mocking",
-      "url": "https://virtserver.swaggerhub.com/SunSpec/OB2_System_Health/1.0.0"
-    }
-  ],
   "info": {
     "version": "1.0.0",
     "title": "OB Open API System Health",

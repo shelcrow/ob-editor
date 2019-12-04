@@ -17,14 +17,17 @@ export default new Vuex.Store({
     nodeDataType: null,
     nodeParent: null,
     nodeDescription: null,
+    nameRef: null,
     showEditNodeView: false,
     showDetailedView: true,
-    showCreateNodeElementView: false,
-    showCreateNodeObjectView: false,
     listOfDefinitionElements: [],
     selectDefinitionNode: false,
     showCreateDefinitionForm: false,
     nodeToAddToObject: '',
+    refreshCreateDefn: false,
+
+    // tracks whether exportModal has been opened, needed so a watcher can reset the export form.
+    exportModalOpened: false,
 
   },
   mutations: {
@@ -36,12 +39,15 @@ export default new Vuex.Store({
       state.uploadedOASFileOriginal = JSON.parse(json_str)
       state.schemaFile = state.uploadedOASFileOriginal.components.schemas
 
-      Object.keys(state.schemaFile).forEach( key => {
-        state.allNodesFlat.push(key)
-      }) 
       // replace all instances of schemaFile with schemaFile. schemaFile is no longer needed as we took out the definition obj.
       // state.schemaFile = state.schemaFile
       JSONEditor.createArrayOfAllElementDefinitions(state.schemaFile, state.listOfDefinitionElements)
+    },
+    updateFlatNodes(state) {
+      state.allNodesFlat = []
+      Object.keys(state.schemaFile).forEach( key => {
+        state.allNodesFlat.push(key)
+      }) 
     },
     selectNode(state, payload) {
       state.isSelected = payload.nodeName;
@@ -50,6 +56,9 @@ export default new Vuex.Store({
       state.nodeType = payload.nodeType;
       state.nodeDataType = payload.nodeType
       state.nodeDescription = ''
+      state.nameRef = payload.nameRef
+
+      // don't need loop if referencing top level, can just directly access with key to get value(s)
       if (payload.nodeType == 'element') {
         Object.keys(state.schemaFile).forEach(key => {
           if (key == state.nodeName) {
@@ -71,37 +80,21 @@ export default new Vuex.Store({
       state.isSelected = false
     },
     showEditNodeView(state) {
-      state.showCreateNodeElementView = false
       state.showDetailedView = false
-      state.showCreateNodeObjectView = false
       state.showEditNodeView = true
       state.selectDefinitionNode = true
 
 
     },
     showDetailedView(state) {
-      state.showCreateNodeElementView = false
       state.showEditNodeView = false
-      state.showCreateNodeObjectView = false
       state.showDetailedView = true
       state.showCreateDefinitionForm = false
     },
-    showCreateNodeElementView(state) {
-      state.showEditNodeView = false
-      state.showDetailedView = false
-      state.showCreateNodeObjectView = false
-      state.showCreateNodeElementView = true
-    },
-    showCreateNodeObjectView(state) {
-      state.showEditNodeView = false
-      state.showDetailedView = false
-      state.showCreateNodeElementView = false
-      state.showCreateNodeObjectView = true
-    },
+
     showCreateDefinitionForm(state) {
       state.showCreateDefinitionForm = true
       state.showDetailedView = false
-      state.showCreateNodeElementView = false
       state.showCreateNodeObjectView = false    
       state.showEditNodeView = false
   
@@ -117,9 +110,10 @@ export default new Vuex.Store({
       }
       Vue.set(state.schemaFile.definitions.properties, payload.nodeName, node_attr)
     },
-    exportFile(state) {
+    exportFile(state, payload) {
+      Vue.set(state.uploadedOASFileOriginal, "info", payload.info )
       let jsonFileToExport = new Blob([JSON.stringify(state.uploadedOASFileOriginal, null, 4)], { type: "application/json" })
-      FileSaver.saveAs(jsonFileToExport, "definition_file")
+      FileSaver.saveAs(jsonFileToExport, payload.filename + ".json")
     },
     selectNone(state) {
       state.isSelected = null
@@ -135,24 +129,43 @@ export default new Vuex.Store({
       state.selectDefinitionNode = false
     },
     createDefinition(state, payload) {
-      let defn_attr = {
-        "type": payload.definitionType,
-        "description": payload.definitionDescription,
+      let defn_attr = {}
+      if (payload.definitionType == 'object') {
+        defn_attr = {
+          "type": payload.definitionType,
+          "description": payload.definitionDescription,
+          "properties": {}
+        }
+      } else {
+        defn_attr = {
+          "type": payload.definitionType,
+          "description": payload.definitionDescription,
+        }
       }
+
       Vue.set(state.schemaFile, payload.definitionName, defn_attr)
     },
     setAddNodeToObject(state, nodeName) {
       state.nodeToAddToObject = nodeName
     },
+    setAddNodeToObjectToNone(state) {
+      state.nodeToAddToObject = ''
+    },
     addNodeToObject(state, payload) {
-      let nodeType = ''
-      Object.keys(state.schemaFile).forEach(key => {
-        if (key == state.nodeToAddToObject) {
-          nodeType = state.schemaFile[key].type
-        }
-      })
+      console.log('nodeToAddToObject: ' + state.nodeToAddToObject) 
+      let nodeType = state.schemaFile[state.nodeToAddToObject].type
+      console.log('ParentNode: ' + state.parentNode)
+      console.log('nodeType: ' + nodeType)
 
-      JSONEditor.addChildToObject(state.schemaFile, state.nodeName, state.nodeToAddToObject, nodeType)
+      JSONEditor.addChildToObject(state.schemaFile, state.nodeName, state.nodeToAddToObject, nodeType, state.schemaFile[state.nodeToAddToObject])
+    },
+
+    // Refreshes form inputs when trying to hit add definition after already adding a defn
+    refreshCreateDefnInputs(state, refreshBool) {
+      state.refreshCreateDefn = refreshBool
+    },
+    toggleExportModal(state) {
+      state.exportModalOpened = !state.exportModalOpened
     }
 
   },

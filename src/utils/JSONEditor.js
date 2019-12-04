@@ -122,20 +122,46 @@ export function createArrayOfAllElementDefinitions(JSONFile, array) {
 
 
 //add child to object whether element or object
-// not taking into account the reference URLs, therefore the adding elements or objects is not matching up
-// take into account reference URLs when referencing ?? shouldn't matter since I am only referencing TOP LEVEL elements and objects.
-// all references should be in TOP LEVEL whether objects or elements.
-export function addChildToObject(JSONFile, parentName, childName, nodeType) {
-    console.log('in JSONEditor.js \n' + "parentname: " + parentName + "\nchildname: " + childName + "\nnodeType: " + nodeType)
-    console.log('Name of parent object ' + parentName + ' object to add to')
-    console.log(JSONFile[parentName])
-    console.log('Name of child node: ' + childName + "\nChild object:") 
-    console.log(JSONFile[childName])
-    if (nodeType == 'object') {
-        console.log('From JSONEditor: this is an object')
-        Vue.set(JSONFile[parentName].properties, childName, JSONFile[childName])
-    } else {
-        console.log('From JSONEditor: this is an element')
-        Vue.set(JSONFile[parentName].properties, childName, JSONFile[childName])
-    }
+//adding children to the top level object does not propagate throughout the reference objects
+export function addChildToObject(JSONFile, parentName, childName, nodeType, childObj) {
+    // console.log('in JSONEditor.js \n' + "parentname: " + parentName + "\nchildname: " + childName + "\nnodeType: " + nodeType)
+    // console.log('Name of parent object ' + parentName + ' object to add to')
+    // console.log(JSONFile[parentName].properties)
+    // console.log('Name of child node: ' + childName + "\nChild object:") 
+    // console.log(JSONFile[childName])
+    // if (nodeType == 'object') {
+    //     console.log('From JSONEditor: this is an object')
+    //     Vue.set(JSONFile[parentName].properties, childName, JSONFile[childName])
+    // } else {
+    //     console.log('From JSONEditor: this is an element')
+    //     Vue.set(JSONFile[parentName].properties, childName, JSONFile[childName])
+    // }
+
+    Object.keys(JSONFile).forEach(key => {
+        // console.log("in recurison fxn start")
+        // console.log(key)
+        if (key == parentName) {
+            // console.log(key + "key is the same")
+            if (nodeType == 'object') {
+                // console.log('From JSONEditor: this is an object')
+                Vue.set(JSONFile[parentName].properties, childName, childObj)
+            } else {
+                // don't need to have an else statement for elements? because they can't have children. maybe remove.
+                // console.log('From JSONEditor: this is an element')
+                // console.log('\nparent obj:')
+                // console.log(JSONFile[parentName])
+                // console.log('\nchild name: ' + childName + '\nchildObject: ')
+                // console.log(childObj)
+                Vue.set(JSONFile[parentName].properties, childName, childObj)
+            }
+        } else if (JSONFile[key].properties) {
+            // console.log(key + "key is not the same")
+            addChildToObject(JSONFile[key].properties, parentName, childName, nodeType, childObj)
+        }
+
+        // if (JSONFile[key] != undefined && JSONFile[key].properties) {
+        //     deleteNode(JSONFile[key].properties, nodeName, parentName)
+        // } 
+    })
+
 }

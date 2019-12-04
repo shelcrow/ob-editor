@@ -25,9 +25,9 @@
             <span id="edit-form-buttons">
                 <b-button v-if="preSubmit" type="submit" @click.prevent="createElement">Create</b-button>
                 <b-button v-if="preSubmit" @click="showDetailedView">Cancel</b-button>
-                <b-alert :show="!preSubmit" variant="success" dismissible @dismissed="showDetailedView">
+                <!-- <b-alert :show="!preSubmit" variant="success" dismissible @dismissed="showDetailedView">
                     Create element was successful.
-                </b-alert>
+                </b-alert> -->
             </span>
 
         </b-form>
@@ -77,6 +77,17 @@ export default {
                 this.preSubmit = true
             }
 
+        },
+        "$store.state.refreshCreateDefn"() {
+            if (this.$store.state.refreshCreateDefn == true) {
+                this.definitionType = null
+                this.definitionName = null
+                this.definitionDescription = null
+                if (!this.preSubmit) {
+                    this.preSubmit = true
+                }
+                this.$store.commit("refreshCreateDefnInputs", false)
+            }
         }
     }
 }

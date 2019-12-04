@@ -73,15 +73,17 @@
         :nodeType="item.type"
         :parent=name
         type="object"
+        :nameRef="objectRef(name, child_name)"
       ></UploadOBTree>
       <UploadOBTree
-        v-else
+        v-if="expandObject && item.type != 'object'"
         :name="child_name"
         :depth="depth + 1"
         :nodeDescription="item.description"
         :nodeType="item.type"
         :parent=name
         type="element"
+        :nameRef="objectRef(name, child_name)"
       ></UploadOBTree>
     </span>
     <!-- <UploadOBTree
@@ -98,7 +100,7 @@
 
 <script>
 export default {
-  props: ["name", "children", "depth", "expandAllObjects", "parent_name", "nodeDescription", "nodeType", "parent", "type"],
+  props: ["name", "children", "depth", "expandAllObjects", "parent_name", "nodeDescription", "nodeType", "parent", "type", "nameRef"],
   name: "UploadOBTree",
   data() {
     return {
@@ -116,7 +118,7 @@ export default {
       return "modal-add-child-" + this.$store.state.nodeCount;
     },
     isSelected() {
-      return this.$store.state.isSelected == this.name;
+      return this.$store.state.nameRef == this.nameRef;
     },
     toolTipID() {
 
@@ -163,10 +165,13 @@ export default {
         type: 'selectNode',
         nodeName: this.name,
         nodeParent: this.parent,
-        nodeType: this.type
-
+        nodeType: this.type,
+        nameRef: this.nameRef
       })
     },
+    objectRef(parent, child) {
+      return parent + "-" + child;
+    }
   },
   watch: {
     expandAllObjects() {

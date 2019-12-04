@@ -11,90 +11,41 @@
             v-if="!file"
         ></b-form-file>
         <span v-else>Selected file: <strong>{{ file ? file.name : '' }}</strong></span>
-        <!-- <p> Selected file: <strong>OAS-references.json</strong></p> -->
     </div>
     <div class="element-selector-body" ref="treeContainer">
         <div v-if="file" class="tabs-selector">
-            <b-card no-body>
-                <b-tabs card>
-                <b-tab title="All" active>
-                    <b-card-text>
-                        <span
-                        v-if="$store.state.schemaFile"
-                        v-for="(item,name, index) in $store.state.schemaFile"
-                        :key="index"
-                        >
-                        <UploadOBTree
-                            v-if="item.type == 'object'"
-                            :name="name"
-                            :children="item.properties"
-                            :depth="0"
-                            :expandAllObjects="expandAllObjects"
-                            :nodeDescription="item.description"
-                            :nodeType="item.type"
-                            parent="root"
-                            type="object"
-                        ></UploadOBTree> 
-                        <UploadOBTree
-                            v-else
-                            :name="name"
-                            :depth="0"
-                            :expandAllObjects="expandAllObjects"
-                            :nodeDescription="item.description"
-                            :nodeType="item.type"
-                            :ref="name"
-                            parent="root"
-                            type="element"
-                        >
-                        </UploadOBTree>
-                        </span>
-
-
-                    </b-card-text>
-                </b-tab>
-                <b-tab title="Objects">
-                    <b-card-text>
-                        <span
-                        v-if="$store.state.schemaFile"
-                        v-for="(item,name, index) in $store.state.schemaFile"
-                        :key="index"
-                        >
-                            <UploadOBTree
-                                v-if="item.properties"
-                                :name="name"
-                                :children="item.properties"
-                                :depth="0"
-                                :expandAllObjects="expandAllObjects"
-                                :nodeDescription="item.description"
-                                :nodeType="item.type"
-                                parent="root"
-                                type="object"
-                            ></UploadOBTree> 
-                        </span>
-                    </b-card-text>
-                </b-tab>
-                <b-tab title="Elements">
-                    <b-card-text>
-                        <span
-                        v-if="$store.state.schemaFile"
-                        v-for="(item,name, index) in $store.state.schemaFile"
-                        :key="index"
-                        >
-                            <UploadOBTree
-                                v-if="item.properties === undefined"
-                                :name="name"
-                                :depth="0"
-                                :expandAllObjects="expandAllObjects"
-                                :nodeDescription="item.description"
-                                :nodeType="item.type"
-                                parent="root"
-                                type="element"
-                            ></UploadOBTree> 
-                        </span>
-                    </b-card-text>
-                </b-tab>
-                </b-tabs>
-            </b-card>
+            <span
+                v-if="$store.state.schemaFile"
+                v-for="(item,name, index) in $store.state.schemaFile"
+                :key="index"
+            >
+                <UploadOBTree
+                    v-if="item.type == 'object'"
+                    :name="name"
+                    :children="item.properties"
+                    :depth="0"
+                    :expandAllObjects="expandAllObjects"
+                    :nodeDescription="item.description"
+                    :nodeType="item.type"
+                    parent="root"
+                    type="object"
+                    :ref="name"
+                    :nameRef="objectRef(name)"
+                ></UploadOBTree> 
+                <UploadOBTree
+                    v-else
+                    :name="name"
+                    :depth="0"
+                    :expandAllObjects="expandAllObjects"
+                    :nodeDescription="item.description"
+                    :nodeType="item.type"
+                    :ref="name"
+                    parent="root"
+                    type="element"
+                    :nameRef="objectRef(name)"
+                >
+                </UploadOBTree>
+            </span>
         </div>
         <div v-else>
             <p> Please select an Open API file from your system.</p>
@@ -102,13 +53,15 @@
 
     </div>
     <div class="element-selector-footer">
-        <!-- <b-button variant="outline-secondary" size="sm">Select All</b-button> 
-        <b-button variant="outline-secondary" size="sm">Select None</b-button>
-        <b-button variant="outline-secondary" size="sm">Expand All</b-button>
-        <b-button variant="outline-secondary" size="sm">Collapse All</b-button>       -->
+        <b-button variant="primary" size="sm" @click="toggleExpandAll">
+            <span v-if="expandAllObjects">
+                Collapse All
+            </span>
+            <span v-else>
+                Expand All
+            </span>
+        </b-button>
         <b-button variant="primary" size="sm" @click="showCreateDefinitionForm">Create New Definition</b-button>
-        <!-- <b-button variant="outline-secondary" size="sm" @click="showCreateElementForm">Create New Element</b-button>
-        <b-button variant="outline-secondary" size="sm" @click="showCreateObjectForm">Create New Object</b-button> -->
     </div>
 
 
@@ -116,28 +69,23 @@
     <div class="element-editor-header">
         <div class="editor-header">
             <h4 v-show="$store.state.showDetailedView">Detailed View</h4>
-            <h4 v-show="$store.state.showEditNodeView">Edit </h4>
-            <!-- <h4 v-show="$store.state.showCreateNodeElementView">Create Element</h4>
-            <h4 v-show="$store.state.showCreateNodeObjectView">Create Object</h4> -->
+            <h4 v-show="$store.state.showEditNodeView">Edit {{ $store.state.isSelected}} </h4>
             <h4 v-show="$store.state.showCreateDefinitionForm">Create Definition</h4>
         </div>
         <div class="download-button-container">
-            <b-button variant="primary" @click="exportFile">Export</b-button>
+            <b-button variant="primary" v-b-modal.export-modal @click="exportModalOpened">Export</b-button>
         </div>
     </div>
     <div class="element-editor-body">
         <DetailedNodeView v-show="$store.state.showDetailedView"/>
         <EditNodeForm v-show="$store.state.showEditNodeView" />
-        <CreateNodeElementForm v-show="$store.state.showCreateNodeElementView" />
-        <CreateNodeObjectForm v-show="$store.state.showCreateNodeObjectView" />
         <CreateDefinitionForm v-show="$store.state.showCreateDefinitionForm" />
     </div>
     <div class="element-editor-footer">
-        <!-- <b-button variant="outline-secondary" size="sm" id="create-new-elem-btn">Create New Element</b-button>
-        <b-button variant="outline-secondary" size="sm">Create New Object</b-button> -->
-        <!-- <b-button variant="outline-secondary" size="sm" @click="toggleDetailedView">Toggle Detailed View</b-button> -->
-        <!-- <b-button variant="outline-secondary" size="sm" @click="toggleEditorView">Toggle Editor View</b-button> -->
     </div>
+
+    <!-- Modals -->
+    <ExportFormModal />
 
   </div>
 </template>
@@ -149,21 +97,17 @@ import DetailedNodeView from "../components/DetailedNodeView.vue"
 // import JSONFile from "../assets/OB-OAS-Master-Definition.json"
 import JSONFile from "../assets/OAS-references.json"
 import EditNodeForm from "../components/forms/EditNodeForm.vue"
-import CreateNodeElementForm from "../components/forms/CreateNodeElementForm.vue"
-import CreateNodeObjectForm from "../components/forms/CreateNodeObjectForm.vue"
 import CreateDefinitionForm from "../components/forms/CreateDefinitionForm.vue"
+import ExportFormModal from "../components/forms/ExportFormModal"
 
 
 
 export default {
-    components: { UploadOBTree, DetailedNodeView, EditNodeForm, CreateNodeElementForm, CreateNodeObjectForm, CreateDefinitionForm },
-    // created() {
-    //     this.$store.commit("updateOriginalJSONFile", JSONFile)
-    // },
+    components: { UploadOBTree, DetailedNodeView, EditNodeForm, CreateDefinitionForm, ExportFormModal },
   data() {
     return {
-      file: null,
-        expandAllObjects: null,
+        file: null,
+        expandAllObjects: true,
         detailedView: true,
         editorView: false,
         allNodesFlat: []
@@ -183,14 +127,6 @@ export default {
               }
           }
       },
-      showCreateElementForm() {
-          this.$store.commit("selectNone")
-          this.$store.commit("showCreateNodeElementView")
-      },
-      showCreateObjectForm() {
-            this.$store.commit("selectNone")
-          this.$store.commit("showCreateNodeObjectView")
-      },
       exportFile() {
           this.$store.commit("exportFile")
       },
@@ -198,6 +134,16 @@ export default {
             this.$store.commit("selectNone")
 
           this.$store.commit("showCreateDefinitionForm")
+          this.$store.commit("refreshCreateDefnInputs", true)
+      },
+      toggleExpandAll() {
+          this.expandAllObjects = !this.expandAllObjects
+      },
+      objectRef(nodeName) {
+          return "root-" + nodeName
+      },
+      exportModalOpened() {
+          this.$store.commit("toggleExportModal")
       }
   },
   watch: {
@@ -205,8 +151,15 @@ export default {
           this.fileToJSON();
       },
       // jump to definition node if you want to edit the non-definition node
+      // do i need to keep the if statement to differentiate between objects and elements?
       "$store.state.selectDefinitionNode"() {
           if (this.$store.state.selectDefinitionNode == true && this.$store.state.nodeType != "object") {
+              this.$store.state.nameRef = "root-" + this.$store.state.nodeName;
+              let yCoord = this.$refs[this.$store.state.isSelected][0].$el.offsetTop
+              this.$refs.treeContainer.scrollTop = yCoord - 200
+              this.$store.commit("toggleSelectDefinitionNode")
+          } else if (this.$store.state.selectDefinitionNode == true && this.$store.state.nodeType == "object") {
+                this.$store.state.nameRef = "root-" + this.$store.state.nodeName;
               let yCoord = this.$refs[this.$store.state.isSelected][0].$el.offsetTop
               this.$refs.treeContainer.scrollTop = yCoord - 200
               this.$store.commit("toggleSelectDefinitionNode")
@@ -258,9 +211,6 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;            
-
-
-    
 }
 
 .element-editor-header {
@@ -298,9 +248,6 @@ export default {
     padding-left: 15px;
     padding-right: 15px;
     overflow-y: auto;
-
-
-
 }
 
 .element-editor-footer {
@@ -311,26 +258,24 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
-
-
 }
 
 .btn {
     margin-left: 5px;
 }
 
-
-
-
 .tabs-selector {
     min-height: 100%
 }
 
-.card { min-height: 100%}
+.card { 
+    min-height: 100%
+}
 
 .card-body {
     padding: 0px !important;
     padding-top: 5px !important;
 }
+
 </style>
 
