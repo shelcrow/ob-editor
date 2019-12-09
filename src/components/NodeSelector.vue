@@ -19,7 +19,6 @@
             id="selectedElementTable"
             ref="selectedElementTable"
         ></b-table>
-
     </div>
 </template>
 

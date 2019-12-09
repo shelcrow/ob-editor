@@ -87,6 +87,8 @@
     <!-- Modals -->
     <ExportFormModal />
 
+    {{ sortedObjects }}
+
   </div>
 </template>
 
@@ -167,7 +169,25 @@ export default {
       }
   },
   computed: {
+      sortedObjects() {
+          let obj_lst = []
+          let el_lst = []
+          let ret_lst = []
+          if (this.$store.state.schemaFile) {
+            Object.keys(this.$store.state.schemaFile).forEach(key => {
+                if (this.$store.state.schemaFile[key]["type"] == "object") {
+                    obj_lst.push([key, this.$store.state.schemaFile[key]])
+                } else {
+                    el_lst.push([key, this.$store.state.schemaFile[key]])
+                }
+            })
+            console.log(obj_lst.sort())
+            console.log(el_lst.sort())
+            console.log(obj_lst.concat(el_lst))
+            return "test"
+          }
 
+      }
   }
 
 };
