@@ -35,11 +35,9 @@ export function deleteNode(JSONFile, nodeName, parentName) {
     })
 }
 
-
 /// EDIT FUNCTIONS
 /// What information are you allowed to edit?
 /// 
-
 
 //Edit node
 export function editNode(JSONFile, nodeName, newType, newDocumentation) {
@@ -164,4 +162,57 @@ export function addChildToObject(JSONFile, parentName, childName, nodeType, chil
         // } 
     })
 
+}
+
+// add superClass to object, making that object a subclass
+export function addSuperClassToObject(JSONFile, subClass, superClass, superClassObj) {
+
+    // if superClass ref exists, don't add it, if it doesn't - add it. Have to check through all refs because this is a recursive fxn
+    let refExists = false
+    let allOfArr = []
+    let allOfObj = {}
+    if (JSONFile[subClass].allOf) {
+        for (i of JSONFile[subClass].allOf) {
+            if (i["ref"] == '#/components/schemas/' + superClass) {
+                refExists = true
+            }
+        }
+        if (!refExists) {
+            JSONFile[subClass].allOf.push(
+                { 
+                    "$ref": "#/components/schemas/" + superClass
+                }
+            )
+        }
+    } else {
+        allOfArr.push({
+            "$ref": "#/components/schemas/" + superClass
+        })
+        // push deep clone. may need a better way to deep clone js objs. possibly lodash
+        allOfArr.push(JSON.parse(JSON.stringify(JSONFile[subClass])))
+        allOfObj = {
+            "allOf": allOfArr
+        }
+        Vue.delete(JSONFile, subClass)
+        Vue.set(JSONFile, subClass, allOfObj)
+    }
+
+
+
+
+
+
+    // Object.keys(superClassObj).forEach(key => {
+    //     Vue.set(JSONFile[subClass].properties, key, superClassObj[key])
+    // })
+
+    // console.log(JSONFile[subClass])
+
+    // Object.keys(JSONFile).forEach(key => {
+    //     if (key == subClass) {
+
+    //     } else if (JSONFile[key].properties) {
+
+    //     }
+    // })
 }

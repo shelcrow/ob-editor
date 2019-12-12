@@ -53,10 +53,6 @@
                 <p> No documentation available </p>
               </span>
             </b-tooltip> -->
-
-
-
-
         </span>
       </div>
     </div>

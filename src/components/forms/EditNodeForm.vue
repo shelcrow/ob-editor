@@ -5,7 +5,7 @@
                 id="node-name-input-group"
                 label="Definition name:"
                 label-for="node-name-input"
-                v-if="!addingChild"
+                v-if="!addingChild && !addingSubClass"
             >
                 <b-form-input id="node-name-input" v-model="$store.state.nodeName" disabled></b-form-input>
             </b-form-group>
@@ -13,7 +13,7 @@
                 id="node-type-input-group"
                 label="Definition OAS type:"
                 label-for="node-type-input"
-                v-if="!addingChild"
+                v-if="!addingChild && !addingSubClass"
             >
                 <b-form-select id="node-type-input" v-model="$store.state.nodeDataType" :options="dataTypes" :disabled="!preSubmit || addingChild"></b-form-select>
             </b-form-group>
@@ -21,7 +21,7 @@
                 id="node-description-input-group"
                 label="Definition description:"
                 label-for="node-description-input"
-                v-if="!addingChild"
+                v-if="!addingChild && !addingSubClass"
             >
                 <b-form-input id="node-description-input" v-model="$store.state.nodeDescription" :disabled="!preSubmit || addingChild"></b-form-input>
             </b-form-group>
@@ -30,14 +30,19 @@
                 <NodeSelector />
             </div>
 
+            <div v-if="addingSubClass">
+                <SuperClassSelector />
+            </div>
+
             <span id="edit-form-buttons">
-                <b-button v-if="$store.state.nodeDataType == 'object' && addChildButton" variant='secondary' @click="addChild">Add member</b-button>
-                <b-button v-if="preSubmit " variant='primary' type="submit" @click.prevent="editNodeSubmit">
-                    <span v-if='!addingChild'>Submit</span>
+                <b-button v-if="$store.state.nodeDataType == 'object' && !addingChild && !addingSubClass" variant='secondary' @click="addChild">Add member</b-button>
+                <b-button v-if="!addingChild && !addingSubClass" @click="addSubClassObject">Create Subclass</b-button>
+                <b-button v-if="preSubmit" variant='primary' type="submit" @click.prevent="editNodeSubmit">
+                    <span v-if='!addingChild && !addingSubClass'>Submit</span>
                     <span v-else>Add</span>
                 </b-button>
                 <!-- <b-button v-if="addingChild" variant='primary' type="submit" @click.prevent="editNodeSubmit">Add</b-button> -->
-                <b-button v-if="preSubmit" variant='danger' @click="showDetailedView">Cancel</b-button>
+                <b-button v-if="preSubmit" variant='danger' @click="backToEditView">Cancel</b-button>
                 <!-- <b-alert :show="!preSubmit" variant="success" dismissible @dismissed="showDetailedView">
                     Edit was successful.
                 </b-alert> -->
@@ -49,15 +54,16 @@
 
 <script>
 import NodeSelector from "../NodeSelector.vue"
+import SuperClassSelector from "../SuperClassSelector.vue"
 
 export default {
-    components: { NodeSelector },
+    components: { NodeSelector, SuperClassSelector  },
     data() {
         return {
             preSubmit: true,
             dataTypes: ['string', 'number', 'integer', 'boolean', 'array', 'object'],
-            addChildButton: true,
-            addingChild: false
+            addingChild: false,
+            addingSubClass: false,
         }
     },
     methods: {
@@ -68,20 +74,30 @@ export default {
             this.addChildButton = true
             this.addingChild = false
         },
+        backToEditView() {
+            this.preSubmit = true
+            this.addingChild = false
+            this.addingSubClass = false
+        },
         editNodeSubmit() {
             this.preSubmit = false
             if (this.addingChild) {
                 this.$store.commit("addNodeToObject")
                 this.$store.commit("setAddNodeToObjectToNone")
+            } else if (this.addingSubClass) {
+                this.$store.commit("addSuperClassToObject")
+                this.$store.state.superClassToAddToObject = ''
             } else {
                 this.$store.commit("editNode")
             }
         },
         addChild() {
-            console.log("add child")
-            this.addChildButton = false
             this.addingChild = true
             this.$store.commit("updateFlatNodes")
+        },
+        addSubClassObject() {
+            this.addingSubClass = true
+            this.$store.commit("updateFlatObjNodes")
         }
     },
     computed: {

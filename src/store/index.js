@@ -10,6 +10,7 @@ export default new Vuex.Store({
     uploadedOASFileOriginal: null,
     schemaFile: null,
     allNodesFlat: [],
+    allObjNodesFlat: [],
     selectorFile: null,
     isSelected: null,
     nodeName: null,
@@ -24,6 +25,7 @@ export default new Vuex.Store({
     selectDefinitionNode: false,
     showCreateDefinitionForm: false,
     nodeToAddToObject: '',
+    superClassToAddToObject: '',
     refreshCreateDefn: false,
 
     // tracks whether exportModal has been opened, needed so a watcher can reset the export form.
@@ -43,11 +45,20 @@ export default new Vuex.Store({
       // state.schemaFile = state.schemaFile
       JSONEditor.createArrayOfAllElementDefinitions(state.schemaFile, state.listOfDefinitionElements)
     },
+    // for adding children to defns, whether elem or obj
     updateFlatNodes(state) {
       state.allNodesFlat = []
       Object.keys(state.schemaFile).forEach( key => {
         state.allNodesFlat.push(key)
       }) 
+    },
+    updateFlatObjNodes(state) {
+      state.allObjNodesFlat = []
+      Object.keys(state.schemaFile).forEach(key => {
+        if (state.schemaFile[key]["type"] == "object") {
+          state.allObjNodesFlat.push(key)
+        }
+      })
     },
     selectNode(state, payload) {
       state.isSelected = payload.nodeName;
@@ -83,8 +94,6 @@ export default new Vuex.Store({
       state.showDetailedView = false
       state.showEditNodeView = true
       state.selectDefinitionNode = true
-
-
     },
     showDetailedView(state) {
       state.showEditNodeView = false
@@ -159,6 +168,10 @@ export default new Vuex.Store({
 
       JSONEditor.addChildToObject(state.schemaFile, state.nodeName, state.nodeToAddToObject, nodeType, state.schemaFile[state.nodeToAddToObject])
     },
+    setAddSuperClassToObject(state, superClassName) {
+      console.log(superClassName)
+      state.superClassToAddToObject = superClassName
+    },
 
     // Refreshes form inputs when trying to hit add definition after already adding a defn
     refreshCreateDefnInputs(state, refreshBool) {
@@ -166,8 +179,12 @@ export default new Vuex.Store({
     },
     toggleExportModal(state) {
       state.exportModalOpened = !state.exportModalOpened
+    },
+    addSuperClassToObject(state) {
+      console.log("Superclass to add: " + state.superClassToAddToObject)
+      let superClassObj = state.schemaFile[state.superClassToAddToObject]["properties"]
+      JSONEditor.addSuperClassToObject(state.schemaFile, state.isSelected, state.superClassToAddToObject, superClassObj)
     }
-
   },
   // actions: {
   //   deleteNode(context, payload) {

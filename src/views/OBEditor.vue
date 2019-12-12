@@ -1,7 +1,5 @@
 <template>
   <div class="ob-editor-container">
-
-
     <div class="element-selector-header">
         <b-form-file
             v-model="file"
@@ -16,33 +14,32 @@
         <div v-if="file" class="tabs-selector">
             <span
                 v-if="$store.state.schemaFile"
-                v-for="(item,name, index) in $store.state.schemaFile"
-                :key="index"
+                v-for="arr in sortedObjects"
             >
                 <UploadOBTree
-                    v-if="item.type == 'object'"
-                    :name="name"
-                    :children="item.properties"
+                    v-if="arr[1].type == 'object'"
+                    :name="arr[0]"
+                    :children="arr[1].properties"
                     :depth="0"
                     :expandAllObjects="expandAllObjects"
-                    :nodeDescription="item.description"
-                    :nodeType="item.type"
+                    :nodeDescription="arr[1].description"
+                    :nodeType="arr[1].type"
                     parent="root"
                     type="object"
-                    :ref="name"
-                    :nameRef="objectRef(name)"
+                    :ref="arr[0]"
+                    :nameRef="objectRef(arr[0])"
                 ></UploadOBTree> 
                 <UploadOBTree
                     v-else
-                    :name="name"
+                    :name="arr[0]"
                     :depth="0"
                     :expandAllObjects="expandAllObjects"
-                    :nodeDescription="item.description"
-                    :nodeType="item.type"
-                    :ref="name"
+                    :nodeDescription="arr[1].description"
+                    :nodeType="arr[1].type"
+                    :ref="arr[0]"
                     parent="root"
                     type="element"
-                    :nameRef="objectRef(name)"
+                    :nameRef="objectRef(arr[0])"
                 >
                 </UploadOBTree>
             </span>
@@ -69,26 +66,23 @@
     <div class="element-editor-header">
         <div class="editor-header">
             <h4 v-show="$store.state.showDetailedView">Detailed View</h4>
-            <h4 v-show="$store.state.showEditNodeView">Edit {{ $store.state.isSelected}} </h4>
+            <h4 v-show="$store.state.showEditNodeView">Edit <strong>{{ $store.state.isSelected}}</strong> </h4>
             <h4 v-show="$store.state.showCreateDefinitionForm">Create Definition</h4>
         </div>
         <div class="download-button-container">
             <b-button variant="primary" v-b-modal.export-modal @click="exportModalOpened">Export</b-button>
         </div>
-    </div>
-    <div class="element-editor-body">
-        <DetailedNodeView v-show="$store.state.showDetailedView"/>
-        <EditNodeForm v-show="$store.state.showEditNodeView" />
-        <CreateDefinitionForm v-show="$store.state.showCreateDefinitionForm" />
-    </div>
-    <div class="element-editor-footer">
-    </div>
+        </div>
+        <div class="element-editor-body">
+            <DetailedNodeView v-show="$store.state.showDetailedView"/>
+            <EditNodeForm v-show="$store.state.showEditNodeView" />
+            <CreateDefinitionForm v-show="$store.state.showCreateDefinitionForm" />
+        </div>
+        <div class="element-editor-footer">
+        </div>
 
-    <!-- Modals -->
-    <ExportFormModal />
-
-    {{ sortedObjects }}
-
+        <!-- Modals -->
+        <ExportFormModal />
   </div>
 </template>
 
@@ -169,10 +163,10 @@ export default {
       }
   },
   computed: {
+      // sort objects into two sections (objects, then elements) and alphabetize
       sortedObjects() {
           let obj_lst = []
           let el_lst = []
-          let ret_lst = []
           if (this.$store.state.schemaFile) {
             Object.keys(this.$store.state.schemaFile).forEach(key => {
                 if (this.$store.state.schemaFile[key]["type"] == "object") {
@@ -181,12 +175,10 @@ export default {
                     el_lst.push([key, this.$store.state.schemaFile[key]])
                 }
             })
-            console.log(obj_lst.sort())
-            console.log(el_lst.sort())
-            console.log(obj_lst.concat(el_lst))
-            return "test"
-          }
-
+            obj_lst.sort()
+            el_lst.sort()
+            return obj_lst.concat(el_lst)
+          } 
       }
   }
 
@@ -247,18 +239,21 @@ export default {
         display: flex;
     justify-content: left;
     align-items: center;
-    grid-column: 1 / 2;
+    grid-column: 1 / span 2;
+    grid-row: 1 / 2;
     padding-top: 5px;
 
 }
 
 .download-button-container {
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
     align-items: center;
     grid-column: 2 / 3;
+    grid-row: 1 / 2;
     padding-bottom: 4px;
     padding-top: 4px;
+    padding-right: 15px;
 }
 
 .element-editor-body {

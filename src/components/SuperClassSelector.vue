@@ -2,13 +2,13 @@
     <div class="node-selector-container">
         <b-form-group 
             id="node-selector-input-label"
-            label="Choose definition to add to object:"
+            label="Choose superclass to subclass this object from"
             label-for="node-selector-input"
         >
-            <b-form-input v-model="searchTerm" placeholder="Search for definition..."></b-form-input>
+            <b-form-input v-model="searchTerm" placeholder="Search for superclass..."></b-form-input>
         </b-form-group>
         <div class="node-list">
-            <li v-for="(definition, index) in filteredList" class="node-in-list" @click="nodeToAdd(index, definition)" :class="{'selected-node': index == selectedIndex}">
+            <li v-for="(definition, index) in filteredList" class="node-in-list" @click="superClassToAdd(index, definition)" :class="{'selected-node': index == selectedIndex}">
                 {{ definition }}
             </li>
         </div>
@@ -29,21 +29,16 @@ export default {
             searchTerm: '',
             selectedIndex: null,
             selectedElementDetails: null
-
         }
     },
     methods: {
-        nodeToAdd(index, definitionName) {
-            let elemType = ''
-            let elemDescrip = ''
-
+        superClassToAdd(index, definitionName) {
             this.selectedIndex = index;
 
-            this.$store.commit("setAddNodeToObject", definitionName)
+            this.$store.commit("setAddSuperClassToObject", definitionName)
 
-
-            elemType = this.$store.state.schemaFile[definitionName]["type"]
-            elemDescrip = this.$store.state.schemaFile[definitionName]["description"]
+            let elemType = this.$store.state.schemaFile[definitionName]["type"]
+            let elemDescrip = this.$store.state.schemaFile[definitionName]["description"]
 
             if (!elemDescrip) {
                 elemDescrip = "Documentation not available"
@@ -60,10 +55,9 @@ export default {
     },
     computed: {
         filteredList() {
-            return this.$store.state.allNodesFlat.filter( node => {
+            return this.$store.state.allObjNodesFlat.filter( node => {
                 if ( node.toLowerCase() != this.$store.state.isSelected.toLowerCase() ) {
                     return node.toLowerCase().includes(this.searchTerm.toLowerCase())
-
                 }
             }).sort()
         }
