@@ -163,10 +163,14 @@ export default new Vuex.Store({
     addNodeToObject(state, payload) {
       console.log('nodeToAddToObject: ' + state.nodeToAddToObject) 
       let nodeType = state.schemaFile[state.nodeToAddToObject].type
-      console.log('ParentNode: ' + state.parentNode)
+      console.log('ParentNode: ' + state.nodeParent)
       console.log('nodeType: ' + nodeType)
+      console.log('node child is being added to: ' + state.nodeName)
+      let childObjKey = state.nodeToAddToObject
+      let childObj = {}
+      childObj[childObjKey] = "#/components/schemas/" + childObjKey
 
-      JSONEditor.addChildToObject(state.schemaFile, state.nodeName, state.nodeToAddToObject, nodeType, state.schemaFile[state.nodeToAddToObject])
+      JSONEditor.addChildToObject(state.schemaFile, state.nodeName, state.nodeToAddToObject, nodeType, childObj)
     },
     setAddSuperClassToObject(state, superClassName) {
       console.log(superClassName)

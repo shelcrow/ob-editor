@@ -8,14 +8,14 @@
       <div class="element-div" :style="indent">
         <span @click="toggleExpand">
           <v-icon
-            v-if="nodeType == 'object' && expandObject"
+            v-if="isObj && expandObject"
             name="minus-square"
             class="icon-expandable clickable"
           />
         </span>
         <span @click="toggleExpand">
           <v-icon
-            v-if="nodeType == 'object' && !expandObject"
+            v-if="isObj && !expandObject"
             name="plus-square"
             class="icon-expandable clickable"
             style="cursor: pointer"
@@ -53,30 +53,34 @@
                 <p> No documentation available </p>
               </span>
             </b-tooltip> -->
+
+
+
+
         </span>
       </div>
     </div>
     <span 
       v-for="(item, child_name) in children"
       :key="child_name"
-    >
+    > 
+
       <UploadOBTree
-        v-if="expandObject && item.type == 'object'"
+        v-if="expandObject && isNodeObject(child_name)"
         :name="child_name"
         :depth="depth + 1"
-        :children="item.properties"
+        :children="returnNodeChildren(child_name)"
         :nodeDescription="item.description"
-        :nodeType="item.type"
+        :isObj="true"
         :parent=name
         type="object"
         :nameRef="objectRef(name, child_name)"
       ></UploadOBTree>
       <UploadOBTree
-        v-if="expandObject && item.type != 'object'"
+        v-else-if="expandObject && !isNodeObject(child_name)"
         :name="child_name"
         :depth="depth + 1"
         :nodeDescription="item.description"
-        :nodeType="item.type"
         :parent=name
         type="element"
         :nameRef="objectRef(name, child_name)"
@@ -96,7 +100,7 @@
 
 <script>
 export default {
-  props: ["name", "children", "depth", "expandAllObjects", "parent_name", "nodeDescription", "nodeType", "parent", "type", "nameRef"],
+  props: ["name", "children", "depth", "expandAllObjects", "parent_name", "nodeDescription", "isObj", "parent", "type", "nameRef"],
   name: "UploadOBTree",
   data() {
     return {
@@ -167,6 +171,20 @@ export default {
     },
     objectRef(parent, child) {
       return parent + "-" + child;
+    },
+
+    // checks if node is obj, returns t or f
+    isNodeObject(child_name) {
+      if (this.$store.state.schemaFile[child_name]["type"] == "object") {
+        return true
+      } else {
+        return false
+      }
+    },
+
+    //returns children object from referenced (no unreferenced objects will be found, because this is below top level)
+    returnNodeChildren(child_name) {
+      return this.$store.state.schemaFile[child_name]["properties"]
     }
   },
   watch: {

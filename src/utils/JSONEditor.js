@@ -135,31 +135,49 @@ export function addChildToObject(JSONFile, parentName, childName, nodeType, chil
     //     Vue.set(JSONFile[parentName].properties, childName, JSONFile[childName])
     // }
 
+    // Object.keys(JSONFile).forEach(key => {
+    //     console.log("in recurison fxn start")
+    //     console.log(key)
+    //     if (key == parentName) {
+    //         console.log(key + "key is the same")
+    //         if (nodeType == 'object') {
+    //             console.log('From JSONEditor: this is an object')
+    //             Vue.set(JSONFile[parentName].properties, childName, childObj)
+    //         } else {
+    //             // don't need to have an else statement for elements? because they can't have children. maybe remove.
+    //             console.log('From JSONEditor: this is an element')
+    //             // console.log('\nparent obj:')
+    //             // console.log(JSONFile[parentName])
+    //             // console.log('\nchild name: ' + childName + '\nchildObject: ')
+    //             // console.log(childObj)
+    //             Vue.set(JSONFile[parentName].properties, childName, childObj)
+    //         }
+    //     } else if (JSONFile[key].properties) {
+    //         console.log(key + "key is not the same")
+    //         addChildToObject(JSONFile[key].properties, parentName, childName, nodeType, childObj)
+    //     }
+
+    //     // if (JSONFile[key] != undefined && JSONFile[key].properties) {
+    //     //     deleteNode(JSONFile[key].properties, nodeName, parentName)
+    //     // } 
+    // })
+
     Object.keys(JSONFile).forEach(key => {
-        // console.log("in recurison fxn start")
-        // console.log(key)
-        if (key == parentName) {
-            // console.log(key + "key is the same")
-            if (nodeType == 'object') {
-                // console.log('From JSONEditor: this is an object')
-                Vue.set(JSONFile[parentName].properties, childName, childObj)
-            } else {
-                // don't need to have an else statement for elements? because they can't have children. maybe remove.
-                // console.log('From JSONEditor: this is an element')
-                // console.log('\nparent obj:')
-                // console.log(JSONFile[parentName])
-                // console.log('\nchild name: ' + childName + '\nchildObject: ')
-                // console.log(childObj)
-                Vue.set(JSONFile[parentName].properties, childName, childObj)
-            }
+        if (key == parentName && JSONFile[key].properties) {
+            // console.log("key match")
+            // console.log("parent name: " + parentName)
+            // console.log("parent obj: " + JSONFile[parentName])
+            // console.log(JSONFile[parentName])
+
+            // console.log("child name: " + childName)
+            // console.log("child obj: " + childObj)
+            // console.log(childObj)
+
+            Vue.set(JSONFile[parentName].properties, childName, childObj)
         } else if (JSONFile[key].properties) {
-            // console.log(key + "key is not the same")
+            // console.log("recursing obj")
             addChildToObject(JSONFile[key].properties, parentName, childName, nodeType, childObj)
         }
-
-        // if (JSONFile[key] != undefined && JSONFile[key].properties) {
-        //     deleteNode(JSONFile[key].properties, nodeName, parentName)
-        // } 
     })
 
 }

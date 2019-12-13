@@ -16,6 +16,12 @@
                 v-if="$store.state.schemaFile"
                 v-for="arr in sortedObjects"
             >
+
+                <!-- 
+                    Can check type without fxns because all top level object/elem have types.
+                    This first round of recursion only hits top levels
+                -->
+
                 <UploadOBTree
                     v-if="arr[1].type == 'object'"
                     :name="arr[0]"
@@ -23,7 +29,7 @@
                     :depth="0"
                     :expandAllObjects="expandAllObjects"
                     :nodeDescription="arr[1].description"
-                    :nodeType="arr[1].type"
+                    :isObj="true"
                     parent="root"
                     type="object"
                     :ref="arr[0]"
@@ -35,7 +41,6 @@
                     :depth="0"
                     :expandAllObjects="expandAllObjects"
                     :nodeDescription="arr[1].description"
-                    :nodeType="arr[1].type"
                     :ref="arr[0]"
                     parent="root"
                     type="element"
@@ -91,7 +96,7 @@
 import UploadOBTree from "../components/UploadOBTree.vue"
 import DetailedNodeView from "../components/DetailedNodeView.vue"
 // import JSONFile from "../assets/OB-OAS-Master-Definition.json"
-import JSONFile from "../assets/OAS-references.json"
+// import JSONFile from "../assets/OAS-references.json"
 import EditNodeForm from "../components/forms/EditNodeForm.vue"
 import CreateDefinitionForm from "../components/forms/CreateDefinitionForm.vue"
 import ExportFormModal from "../components/forms/ExportFormModal"
@@ -160,6 +165,7 @@ export default {
               this.$refs.treeContainer.scrollTop = yCoord - 200
               this.$store.commit("toggleSelectDefinitionNode")
           }
+          this.$store.state.nodeParent = "root"
       }
   },
   computed: {
