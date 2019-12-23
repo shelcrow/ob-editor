@@ -2,6 +2,7 @@ import Vue from "vue";
 import Vuex from "vuex";
 import * as JSONEditor from '../utils/JSONEditor.js'
 import FileSaver from "file-saver"
+import XBRLFile from "../assets/xbrl_all_elements.json"
 
 Vue.use(Vuex);
 
@@ -25,11 +26,20 @@ export default new Vuex.Store({
     selectDefinitionNode: false,
     showCreateDefinitionForm: false,
     nodeToAddToObject: '',
+    nodeToAddListType: '',
     superClassToAddToObject: '',
     refreshCreateDefn: false,
 
     // tracks whether exportModal has been opened, needed so a watcher can reset the export form.
     exportModalOpened: false,
+    xbrlFile: XBRLFile,
+    xbrlFlat: [],
+
+    //tracks whether you are in the OAS tab or the XBRL tab
+    inOASTab: true,
+    inXBRLTab: false,
+
+    treeSearchTerm: '',
 
   },
   mutations: {
@@ -60,13 +70,19 @@ export default new Vuex.Store({
         }
       })
     },
+    updateFlatXBRLNodes(state) {
+      state.xbrlFlat = []
+      Object.keys(XBRLFile).forEach(key => {
+        state.xbrlFlat.push(key)
+      })
+    },
     selectNode(state, payload) {
       state.isSelected = payload.nodeName;
       state.nodeName = payload.nodeName;
       state.nodeParent = payload.nodeParent
       state.nodeType = payload.nodeType;
       state.nodeDataType = payload.nodeType
-      state.nodeDescription = ''
+      state.nodeDescription = payload.nodeDescription
       state.nameRef = payload.nameRef
 
       // don't need loop if referencing top level, can just directly access with key to get value(s)
@@ -130,6 +146,7 @@ export default new Vuex.Store({
       state.nodeType = null
       state.nodeDataType = null
       state.nodeDescription = null
+      state.nameRef = null
     },
     createNodeObject(state, payload) {
       JSONEditor.createNodeObject(state.schemaFile, payload.objectName, payload.objectDescription, payload.elementForms)
@@ -154,21 +171,39 @@ export default new Vuex.Store({
 
       Vue.set(state.schemaFile, payload.definitionName, defn_attr)
     },
-    setAddNodeToObject(state, nodeName) {
-      state.nodeToAddToObject = nodeName
+    setAddNodeToObject(state, payload) {
+      state.nodeToAddToObject = payload.definitionName
+      state.nodeToAddListType = payload.nodeListType
     },
     setAddNodeToObjectToNone(state) {
       state.nodeToAddToObject = ''
     },
     addNodeToObject(state, payload) {
-      console.log('nodeToAddToObject: ' + state.nodeToAddToObject) 
-      let nodeType = state.schemaFile[state.nodeToAddToObject].type
-      console.log('ParentNode: ' + state.nodeParent)
-      console.log('nodeType: ' + nodeType)
-      console.log('node child is being added to: ' + state.nodeName)
-      let childObjKey = state.nodeToAddToObject
+      let nodeType = ""
       let childObj = {}
-      childObj[childObjKey] = "#/components/schemas/" + childObjKey
+
+      // console.log(state.nodeToAddListType)
+      // console.log('nodeToAddToObject: ' + state.nodeToAddToObject) 
+      if (state.nodeToAddListType == "OBOAS") {
+        // console.log("in oboas")
+        childObj["$ref"] = "#/components/schemas/" + state.nodeToAddToObject
+        nodeType = state.schemaFile[state.nodeToAddToObject].type
+      } else if (state.nodeToAddListType == "solar-taxonomy") {
+        // console.log("in solar tax")
+        // console.log(state.xbrlFile[state.nodeToAddToObject])
+        childObj["$ref"] = "xbrl_all_elements.json#/" + state.nodeToAddToObject
+        nodeType = state.xbrlFile[state.nodeToAddToObject]["type"]
+        // console.log(nodeType)
+
+        // don't copy definition, just reference it
+        // if (!state.schemaFile[state.nodeToAddToObject]) {
+        //   Vue.set(state.schemaFile, state.nodeToAddToObject, state.xbrlFile[state.nodeToAddToObject])
+        // }
+      }
+      // console.log('ParentNode: ' + state.nodeParent)
+      // console.log('nodeType: ' + nodeType)
+      // console.log('node child is being added to: ' + state.nodeName)
+
 
       JSONEditor.addChildToObject(state.schemaFile, state.nodeName, state.nodeToAddToObject, nodeType, childObj)
     },

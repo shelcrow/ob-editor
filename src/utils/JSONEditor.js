@@ -186,11 +186,12 @@ export function addChildToObject(JSONFile, parentName, childName, nodeType, chil
 export function addSuperClassToObject(JSONFile, subClass, superClass, superClassObj) {
 
     // if superClass ref exists, don't add it, if it doesn't - add it. Have to check through all refs because this is a recursive fxn
+    // if not subClassed. e.g. not "allOf", 
     let refExists = false
     let allOfArr = []
     let allOfObj = {}
     if (JSONFile[subClass].allOf) {
-        for (i of JSONFile[subClass].allOf) {
+        for (let i of JSONFile[subClass].allOf) {
             if (i["ref"] == '#/components/schemas/' + superClass) {
                 refExists = true
             }

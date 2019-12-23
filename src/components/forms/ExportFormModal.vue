@@ -4,7 +4,7 @@
 
             <template v-slot:modal-footer="{ ok, cancel }">
                 <b-button size="sm" variant="primary" @click="ok(); exportFile(); exportModalOpened()">
-                    Submit
+                    Save As
                 </b-button>
                 <b-button size="sm" variant="danger" @click="cancel(); exportModalOpened()">
                     Cancel
@@ -12,7 +12,7 @@
             </template>        
 
             <b-form>
-                <b-form-group
+                <!-- <b-form-group
                     id="export-form-group-title"
                     label="Title:*"
                     label-for="export-input-title"
@@ -54,11 +54,11 @@
                     >
                         
                     </b-form-input>
-                </b-form-group>
+                </b-form-group> -->
 
                 <b-form-group
                     id="export-form-filename"
-                    label="File name:**"
+                    label="File name:*"
                     label-for="export-input-filename"
                 >
                     <b-form-input
@@ -71,7 +71,7 @@
                     </b-form-input>
                 </b-form-group>
             </b-form>
-            <p>*Required</p>
+            <!-- <p>*Required</p> -->
             <p>**Will save as .json</p>
         </b-modal>
     </div>
@@ -109,9 +109,9 @@ export default {
                 type: "exportFile",
                 filename: this.exportForm.filename,
                 "info": {
-                    "description": this.exportForm.OASDescription,
-                    "title": this.exportForm.OASTitle,
-                    "version": this.exportForm.OASVersion
+                    "description": "Description placeholder",
+                    "title": "Title placeholder",
+                    "version": "Version placeholder"
                 }
             }
             this.$store.commit(exportObj)

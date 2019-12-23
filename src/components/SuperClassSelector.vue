@@ -55,11 +55,13 @@ export default {
     },
     computed: {
         filteredList() {
-            return this.$store.state.allObjNodesFlat.filter( node => {
-                if ( node.toLowerCase() != this.$store.state.isSelected.toLowerCase() ) {
-                    return node.toLowerCase().includes(this.searchTerm.toLowerCase())
-                }
-            }).sort()
+            if (this.$store.state.isSelected) {
+                return this.$store.state.allObjNodesFlat.filter( node => {
+                    if ( node.toLowerCase() != this.$store.state.isSelected.toLowerCase() ) {
+                        return node.toLowerCase().includes(this.searchTerm.toLowerCase())
+                    }
+                }).sort()
+            }
         }
     }
 }

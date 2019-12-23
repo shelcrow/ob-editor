@@ -21,7 +21,7 @@
             style="cursor: pointer"
           />
         </span>
-        <span style="display:inline" :id="toolTipID">
+        <span :class="{ nodeName: subClassedNode, nodeName: importedNode }">
           <!-- <b-form-checkbox
             style="display:inline"
             class="checkbox-s"
@@ -69,12 +69,13 @@
         v-if="expandObject && isNodeObject(child_name)"
         :name="child_name"
         :depth="depth + 1"
-        :children="returnNodeChildren(child_name)"
+        :children="returnNodeChildren(child_name, item)"
         :nodeDescription="item.description"
         :isObj="true"
         :parent=name
         type="object"
         :nameRef="objectRef(name, child_name)"
+        :subClassedNode="fromSuperClass(item)"
       ></UploadOBTree>
       <UploadOBTree
         v-else-if="expandObject && !isNodeObject(child_name)"
@@ -84,6 +85,8 @@
         :parent=name
         type="element"
         :nameRef="objectRef(name, child_name)"
+        :subClassedNode="fromSuperClass(item)"
+        :importedNode="fromImport(item)"
       ></UploadOBTree>
     </span>
     <!-- <UploadOBTree
@@ -100,7 +103,7 @@
 
 <script>
 export default {
-  props: ["name", "children", "depth", "expandAllObjects", "parent_name", "nodeDescription", "isObj", "parent", "type", "nameRef"],
+  props: ["name", "children", "depth", "expandAllObjects", "parent_name", "nodeDescription", "isObj", "parent", "type", "nameRef", "subClassedNode", "importedNode"],
   name: "UploadOBTree",
   data() {
     return {
@@ -118,6 +121,7 @@ export default {
       return "modal-add-child-" + this.$store.state.nodeCount;
     },
     isSelected() {
+      console.log('is selected computed')
       return this.$store.state.nameRef == this.nameRef;
     },
     toolTipID() {
@@ -166,7 +170,8 @@ export default {
         nodeName: this.name,
         nodeParent: this.parent,
         nodeType: this.type,
-        nameRef: this.nameRef
+        nameRef: this.nameRef,
+        nodeDescription: this.nodeDescription
       })
     },
     objectRef(parent, child) {
@@ -175,16 +180,59 @@ export default {
 
     // checks if node is obj, returns t or f
     isNodeObject(child_name) {
-      if (this.$store.state.schemaFile[child_name]["type"] == "object") {
+      if (this.$store.state.schemaFile[child_name]) {
+        if (this.$store.state.schemaFile[child_name]["type"] == "object" || this.$store.state.schemaFile[child_name]["allOf"]) {
+          // if (this.$store.state.schemaFile[child_name]["allOf"]) {
+          //   console.log(this.$store.state.schemaFile[child_name]["allOf"])
+          // }
+          return true
+        } else {
+          return false
+        }        
+      } else if (this.$store.state.xbrlFile[child_name]) {
+        return false
+      }
+      // if (this.$store.state.schemaFile[child_name]["type"] == "object" || this.$store.state.schemaFile[child_name]["allOf"]) {
+      //   // if (this.$store.state.schemaFile[child_name]["allOf"]) {
+      //   //   console.log(this.$store.state.schemaFile[child_name]["allOf"])
+      //   // }
+      //   return true
+      // } else if (this.$store.state.xbrlFile[child_name]){
+      //   return false
+      // }
+    },
+
+    //returns children object from referenced (no unreferenced objects will be found, because this is below top level)
+    returnNodeChildren(child_name, child_obj) {
+      // console.log(child_obj)
+      if (this.$store.state.schemaFile[child_name]["properties"]) {
+        return this.$store.state.schemaFile[child_name]["properties"]
+      } else {
+        // return children merging superClassed objects / elements with obj's children
+        // child_name is the name of the object, just need to return merge of children + superclass children
+        
+      }
+    },
+    fromSuperClass(childNode) {
+      // console.log(childNode["$ref"])
+      // console.log(childNode)
+      if (childNode["fromSuperClass"]) {
+        // console.log("node is from superclass")
         return true
       } else {
         return false
       }
     },
-
-    //returns children object from referenced (no unreferenced objects will be found, because this is below top level)
-    returnNodeChildren(child_name) {
-      return this.$store.state.schemaFile[child_name]["properties"]
+    fromImport(node) {
+      if (node["$ref"]) {
+        if (node["$ref"].includes("xbrl_all_elements")) {
+          return true
+        } else {
+          return false
+        }
+      } else {
+        return false
+      }
     }
   },
   watch: {
@@ -238,5 +286,9 @@ export default {
   border-bottom: #d3d3d3 solid 1px;
   height: 25px;
 
+}
+
+.nodeName {
+  font-style: italic;
 }
 </style>
