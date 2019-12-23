@@ -8,6 +8,7 @@
                 ref="nodeDetailTable"
             ></b-table>
             <div class="detailed-view-buttons">
+                <span v-if="$store.state.inOASTab">
                 <b-button v-if="$store.state.nodeParent == 'root'" variant="primary" size="sm" @click="showEditNodeView">Edit definition</b-button>
                 <b-button v-else variant="primary" size="sm" v-b-modal.modal-edit-node>Edit definition</b-button>
 
@@ -15,6 +16,8 @@
                     <span v-if="$store.state.nodeParent == 'root'"> Delete </span>
                     <span v-else>Remove </span>
                 </b-button>
+                <b-button variant="danger" @click="cancelDetailedView" size="sm">Cancel</b-button>
+                </span>
             </div>
         </span>
 
@@ -83,6 +86,9 @@ export default {
         showEditNodeView() {
             this.$store.commit("showEditNodeView")
         },
+        cancelDetailedView() {
+            this.$store.state.showDetailedView = false;
+        }
     },
     watch: {
         "$store.state.isSelected"() {
@@ -117,7 +123,6 @@ export default {
                 return "Are you sure you want to delete " + this.$store.state.isSelected.bold() + "?" + 
                 "\nThis will remove the " + "member ".bold() + this.$store.state.nodeType + ": " + this.$store.state.isSelected.bold() + " from the object: " + this.$store.state.nodeParent.bold() + ", but will not delete the definition.";
             }
-
         },
         deleteWarningTitle() {
             if (this.$store.state.nodeParent == 'root') {

@@ -35,11 +35,9 @@ export function deleteNode(JSONFile, nodeName, parentName) {
     })
 }
 
-
 /// EDIT FUNCTIONS
 /// What information are you allowed to edit?
 /// 
-
 
 //Edit node
 export function editNode(JSONFile, nodeName, newType, newDocumentation) {
@@ -137,31 +135,103 @@ export function addChildToObject(JSONFile, parentName, childName, nodeType, chil
     //     Vue.set(JSONFile[parentName].properties, childName, JSONFile[childName])
     // }
 
+    // Object.keys(JSONFile).forEach(key => {
+    //     console.log("in recurison fxn start")
+    //     console.log(key)
+    //     if (key == parentName) {
+    //         console.log(key + "key is the same")
+    //         if (nodeType == 'object') {
+    //             console.log('From JSONEditor: this is an object')
+    //             Vue.set(JSONFile[parentName].properties, childName, childObj)
+    //         } else {
+    //             // don't need to have an else statement for elements? because they can't have children. maybe remove.
+    //             console.log('From JSONEditor: this is an element')
+    //             // console.log('\nparent obj:')
+    //             // console.log(JSONFile[parentName])
+    //             // console.log('\nchild name: ' + childName + '\nchildObject: ')
+    //             // console.log(childObj)
+    //             Vue.set(JSONFile[parentName].properties, childName, childObj)
+    //         }
+    //     } else if (JSONFile[key].properties) {
+    //         console.log(key + "key is not the same")
+    //         addChildToObject(JSONFile[key].properties, parentName, childName, nodeType, childObj)
+    //     }
+
+    //     // if (JSONFile[key] != undefined && JSONFile[key].properties) {
+    //     //     deleteNode(JSONFile[key].properties, nodeName, parentName)
+    //     // } 
+    // })
+
     Object.keys(JSONFile).forEach(key => {
-        // console.log("in recurison fxn start")
-        // console.log(key)
-        if (key == parentName) {
-            // console.log(key + "key is the same")
-            if (nodeType == 'object') {
-                // console.log('From JSONEditor: this is an object')
-                Vue.set(JSONFile[parentName].properties, childName, childObj)
-            } else {
-                // don't need to have an else statement for elements? because they can't have children. maybe remove.
-                // console.log('From JSONEditor: this is an element')
-                // console.log('\nparent obj:')
-                // console.log(JSONFile[parentName])
-                // console.log('\nchild name: ' + childName + '\nchildObject: ')
-                // console.log(childObj)
-                Vue.set(JSONFile[parentName].properties, childName, childObj)
-            }
+        if (key == parentName && JSONFile[key].properties) {
+            // console.log("key match")
+            // console.log("parent name: " + parentName)
+            // console.log("parent obj: " + JSONFile[parentName])
+            // console.log(JSONFile[parentName])
+
+            // console.log("child name: " + childName)
+            // console.log("child obj: " + childObj)
+            // console.log(childObj)
+
+            Vue.set(JSONFile[parentName].properties, childName, childObj)
         } else if (JSONFile[key].properties) {
-            // console.log(key + "key is not the same")
+            // console.log("recursing obj")
             addChildToObject(JSONFile[key].properties, parentName, childName, nodeType, childObj)
         }
-
-        // if (JSONFile[key] != undefined && JSONFile[key].properties) {
-        //     deleteNode(JSONFile[key].properties, nodeName, parentName)
-        // } 
     })
 
+}
+
+// add superClass to object, making that object a subclass
+export function addSuperClassToObject(JSONFile, subClass, superClass, superClassObj) {
+
+    // if superClass ref exists, don't add it, if it doesn't - add it. Have to check through all refs because this is a recursive fxn
+    // if not subClassed. e.g. not "allOf", 
+    let refExists = false
+    let allOfArr = []
+    let allOfObj = {}
+    if (JSONFile[subClass].allOf) {
+        for (let i of JSONFile[subClass].allOf) {
+            if (i["ref"] == '#/components/schemas/' + superClass) {
+                refExists = true
+            }
+        }
+        if (!refExists) {
+            JSONFile[subClass].allOf.push(
+                { 
+                    "$ref": "#/components/schemas/" + superClass
+                }
+            )
+        }
+    } else {
+        allOfArr.push({
+            "$ref": "#/components/schemas/" + superClass
+        })
+        // push deep clone. may need a better way to deep clone js objs. possibly lodash
+        allOfArr.push(JSON.parse(JSON.stringify(JSONFile[subClass])))
+        allOfObj = {
+            "allOf": allOfArr
+        }
+        Vue.delete(JSONFile, subClass)
+        Vue.set(JSONFile, subClass, allOfObj)
+    }
+
+
+
+
+
+
+    // Object.keys(superClassObj).forEach(key => {
+    //     Vue.set(JSONFile[subClass].properties, key, superClassObj[key])
+    // })
+
+    // console.log(JSONFile[subClass])
+
+    // Object.keys(JSONFile).forEach(key => {
+    //     if (key == subClass) {
+
+    //     } else if (JSONFile[key].properties) {
+
+    //     }
+    // })
 }
