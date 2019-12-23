@@ -83,7 +83,6 @@ export default {
             } else {
                 this.$store.state.showDetailedView = true
                 this.$store.state.showEditNodeView = false
-                this.$store.state.nameRef = ''
             }
 
         },
