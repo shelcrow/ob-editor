@@ -206,3 +206,31 @@ export function getAllObjInDefn(JSONFile, defnName) {
 
     return allDefnObj
 }
+
+//when adding an object member, check if it has already superclassed that object
+//when adding a superclass, check if it has already 
+// only need to check the top level for conflicts, don't need to check below that
+// export function checkSuperClassObjConflict(JSONFile, objectName, superClassOrObjectNameToAdd) {
+//     let objectNestedObjects = []
+//     let superClasses = []
+//     let superClassRefTopLevelObjs = []
+//     if (JSONFile[objectName]["allOf"]) {
+//         for (let i in JSONFile[objectName]["allOf"]) {
+//             if (JSONFile[objectName]["allOf"][i]["properties"]) {
+//                 if (isDefnObj(JSONFile, i)) {
+//                     objectNestedObjects.push(i)
+//                 }
+//             } else {
+//                 for (let j in JSONFile[objectName]["allOf"][i]["$ref"]) {
+//                     let superClassSubStringIndex = JSONFile[superClassName]["allOf"][i]["$ref"].lastIndexOf("/") + 1
+//                     let superClassSubString = JSONFile[superClassName]["allOf"][i]["$ref"].slice(superClassSubStringIndex)
+//                     superClasses.push(superClassSubString)
+//                 }                
+//             }
+//         }
+//     } else {
+//         for (let i in JSONFile[objectName]["properties"]) {
+
+//         }
+//     }
+// }
