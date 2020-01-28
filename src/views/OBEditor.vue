@@ -11,17 +11,9 @@
         <span v-else>Selected file: <strong>{{ file ? file.name : '' }}</strong></span>
     </div>
     <div class="element-selector-body" ref="treeContainer">
-        <div class="tree-search">
+        <!-- <div class="tree-search">
             <b-form-input class="tree-search-bar" v-model="$store.state.treeSearchTerm" placeholder="Search across element names..."></b-form-input>
-
-            <!-- <b-form-group 
-                id="tree-search-bar-label"
-                label="Search for elements:"
-                label-for="tree-search-bar"
-            >
-                <b-form-input class="tree-search-bar" v-model="searchTerm" placeholder="Search across element names..."></b-form-input>
-            </b-form-group> -->
-        </div>
+        </div> -->
         <b-tabs class="file-tabs">
             <b-tab title="Solar Taxonomy" @click="changeTabState('XBRL')">
                 <span v-if="$store.state.xbrlFile" v-for="arr in sortedObjectsXBRL">
@@ -123,8 +115,10 @@
         </div>
         </div>
         <div class="element-editor-body">
+            <!-- TODO: refactor using dynamic components -->
             <DetailedNodeView v-show="$store.state.showDetailedView"/>
-            <EditNodeForm v-show="$store.state.showEditNodeView" />
+            <!-- <EditNodeForm v-show="$store.state.showEditNodeView" /> -->
+            <EditDefinition v-show="$store.state.showEditNodeView" />
             <CreateDefinitionForm v-show="$store.state.showCreateDefinitionForm" />
         </div>
         <!-- <div class="element-editor-footer">
@@ -141,14 +135,15 @@ import UploadOBTree from "../components/UploadOBTree.vue"
 import DetailedNodeView from "../components/DetailedNodeView.vue"
 // import JSONFile from "../assets/OB-OAS-Master-Definition.json"
 // import JSONFile from "../assets/OAS-references.json"
-import EditNodeForm from "../components/forms/EditNodeForm.vue"
 import CreateDefinitionForm from "../components/forms/CreateDefinitionForm.vue"
 import ExportFormModal from "../components/forms/ExportFormModal"
+import EditDefinition from "../components/EditDefinition/EditDefinition"
+import * as miscUtilities from "../utils/miscUtilities"
 
 
 
 export default {
-    components: { UploadOBTree, DetailedNodeView, EditNodeForm, CreateDefinitionForm, ExportFormModal },
+    components: { UploadOBTree, DetailedNodeView, CreateDefinitionForm, ExportFormModal, EditDefinition },
     data() {
         return {
             file: null,
@@ -164,7 +159,7 @@ export default {
     created() {
         this.$store.commit("updateFlatXBRLNodes")
     },
-  methods: {
+    methods: {
         fileToJSON() {
             if (this.file) {
                 let reader = new FileReader();
@@ -176,6 +171,16 @@ export default {
                 reader.onerror = function() {
                     console.log(reader.error)
                 }
+            }
+        },
+        fromSuperClass(childNode) {
+        // console.log(childNode["$ref"])
+        // console.log(childNode)
+            if (childNode["fromSuperClass"]) {
+                // console.log("node is from superclass")
+                return true
+            } else {
+                return false
             }
         },
         exportFile() {
@@ -200,37 +205,54 @@ export default {
         exportModalOpened() {
             this.$store.commit("toggleExportModal")
         },
-        // returns object containing all children of the superClass and subClass with no duplicates
+        // returns object containing all children of the superClass and subClass with no duplicates, while labeling objects/elements that are inherited for signifying
         subClassChildren(superClassRef, subClassObj) {
-            //   console.log("in subclass children")
-            let superClassChildren = {}
-            let superClassName = ""
-            for (let i in superClassRef) {
-                superClassName = superClassRef[i].slice(superClassRef[i].lastIndexOf("/") + 1)
-                //   console.log("super class name from ref: " + superClassName)
-                // need an if statement to check for subclassed objects
-                if (this.$store.state.schemaFile[superClassName]["allOf"]) {
-                    // let deepSuperClassObj = JSON.parse(JSON.stringify(this.$store.state.schemaFile[superClassName]["allOf"][1]["properties"]))
-                    // Object.keys(deepSuperClassObj).forEach( key => {
-                    //     console.log("key in deepcopy superclass: " + key)
-                    //     deepSuperClassObj[key].fromSuperClass = true
-                    // })
-                    // console.log(deepSuperClassObj)
-                    superClassChildren = {...superClassChildren, ...this.$store.state.schemaFile[superClassName]["allOf"][1]["properties"]}
-                } else {
-                    let deepSuperClassObj = JSON.parse(JSON.stringify(this.$store.state.schemaFile[superClassName]["properties"]))
-                    Object.keys(deepSuperClassObj).forEach( key => {
-                        // console.log("key in deepcopy superclass: " + key)
-                        deepSuperClassObj[key].fromSuperClass = true
-                    })
-                    // console.log(deepSuperClassObj)
-                    superClassChildren = {...superClassChildren, ...deepSuperClassObj}
-                }
-            }
-            //   console.log({...subClassObj["properties"], ...superClassChildren})
-                // console.log({...subClassObj["properties"], ...superClassChildren})
-                // console.log(superClassChildren)
-            return {...subClassObj["properties"], ...superClassChildren}
+            // let superClassChildren = {}
+            // let superClassName = ""
+            // let temp_super_children = {}
+            // miscUtilities.getSuperClassChildren(this.$store.state.schemaFile, superClassRef, subClassObj)
+
+            // for (let i in superClassRef) {
+            //     superClassName = superClassRef[i].slice(superClassRef[i].lastIndexOf("/") + 1)
+            //     if (this.$store.state.schemaFile[superClassName]["allOf"]) {
+            //         // might cause bug here if not using a deep copy
+            //         // need to get both inherited objects and elements
+            //         for (let i in this.$store.state.schemaFile[superClassName]["allOf"]) {
+            //             temp_super_children = {}
+            //             if (this.$store.state.schemaFile[superClassName]["allOf"][i]["properties"]) {
+            //                 temp_super_children = JSON.parse(JSON.stringify(this.$store.state.schemaFile[superClassName]["allOf"][i]["properties"]))
+            //                 Object.keys(temp_super_children).forEach( key => {
+            //                     // console.log("key in deepcopy superclass: " + key)
+            //                     temp_super_children[key].fromSuperClass = true
+            //                 })
+            //             } else {
+            //                 // only way to do show children of a superclasses' superclass is to recursively build it.
+            //                 // if a superclasses' superclass has a superclass then recursion is the only way to build it.
+            //                 // for now superclassing is "simple"
+            //                 // create a miscutility recursive function to build out chain of inherited children
+            //                 // let superClassInheritedSuperClass = this.$store.state.schemaFile[superClassName]["allOf"][i].slice(this.$store.state.schemaFile[superClassName]["allOf"][i].lastIndexOf("/") + 1)
+            //             }
+
+            //             superClassChildren = {...superClassChildren, ...temp_super_children}
+            //         }
+            //     } else {
+            //         let deepSuperClassObj = JSON.parse(JSON.stringify(this.$store.state.schemaFile[superClassName]["properties"]))
+            //         Object.keys(deepSuperClassObj).forEach( key => {
+            //             // console.log("key in deepcopy superclass: " + key)
+            //             deepSuperClassObj[key].fromSuperClass = true
+            //         })
+            //         // console.log(deepSuperClassObj)
+            //         superClassChildren = {...superClassChildren, ...deepSuperClassObj}
+            //     }
+            // }
+            // //   console.log({...subClassObj["properties"], ...superClassChildren})
+            //     // console.log({...subClassObj["properties"], ...superClassChildren})
+            //     // console.log(superClassChildren)
+            // let test_obj = {...subClassObj["properties"], ...superClassChildren}
+            // // console.log('obeditor, subclasschildren: ')
+            // console.log(test_obj)
+            // return {...subClassObj["properties"], ...superClassChildren}
+            return miscUtilities.getSuperClassChildren(this.$store.state.schemaFile, superClassRef, subClassObj)
         },
 
       // keep track of what tab you're in to show the right detailed view
@@ -321,37 +343,30 @@ export default {
           let el_lst = []
           let superClass_lst = []
           let subClass_obj = {}
+
           if (this.$store.state.schemaFile) {
             Object.keys(this.$store.state.schemaFile).forEach(key => {
+                superClass_lst = []
                 if (this.$store.state.schemaFile[key]["type"] == "object") {
                     obj_lst.push([key, this.$store.state.schemaFile[key]])
-                } else if(this.$store.state.schemaFile[key]["allOf"]) {
-                    // console.log("all of")
+                } else if (this.$store.state.schemaFile[key]["allOf"]) {
                     for (let i in this.$store.state.schemaFile[key]["allOf"]) {
                         if (this.$store.state.schemaFile[key]["allOf"][i]["$ref"]) {
-                            // console.log("ref found")
                             superClass_lst.push(this.$store.state.schemaFile[key]["allOf"][i]["$ref"])
                         } else {
                             subClass_obj = this.$store.state.schemaFile[key]["allOf"][i]
-                            // console.log("no ref found")
                         }
                     }
-                    // console.log("Ref list: ")
-                    // console.log(superClass_lst)
-                    // console.log("subclass obj: ")
-                    // console.log(subClass_obj)
                     obj_lst.push([key, superClass_lst, subClass_obj])
-                    // el_lst.push([key, this.$store.state.schemaFile[key]])
                 } else {
                     el_lst.push([key, this.$store.state.schemaFile[key]])
                 }
             })
-            // console.log(el_lst)
+
             obj_lst.sort()
             el_lst.sort()
-            return obj_lst.concat(el_lst).filter( node => {
-              return node[0].toLowerCase().includes(this.$store.state.treeSearchTerm.toLowerCase())
-          })
+
+            return obj_lst.concat(el_lst)
           } 
       },
         sortedObjectsXBRL() {
@@ -403,8 +418,6 @@ export default {
     overflow-y: auto;
     overflow-x: scroll;
     display: grid;
-    grid-template-rows: 50px 1fr;
-
 }
 
 .element-selector-footer {
@@ -484,7 +497,6 @@ export default {
 }
 
 .file-tabs {
-    grid-row: 2 / 3;
 }
 
 .load-more-btn-container {

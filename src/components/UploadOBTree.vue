@@ -21,7 +21,7 @@
             style="cursor: pointer"
           />
         </span>
-        <span :class="{ nodeName: subClassedNode, nodeName: importedNode }">
+        <span :class="{ subClassSignifier: subClassedNode, importedNodeSignifier: importedNode }">
           <!-- <b-form-checkbox
             style="display:inline"
             class="checkbox-s"
@@ -60,11 +60,14 @@
         </span>
       </div>
     </div>
+    <!-- <span 
+      v-for="(item, child_name) in children"
+      :key="child_name"
+    >  -->
     <span 
       v-for="(item, child_name) in children"
       :key="child_name"
     > 
-
       <UploadOBTree
         v-if="expandObject && isNodeObject(child_name)"
         :name="child_name"
@@ -102,6 +105,8 @@
 </template>
 
 <script>
+import * as miscUtilities from "../utils/miscUtilities"
+
 export default {
   props: ["name", "children", "depth", "expandAllObjects", "parent_name", "nodeDescription", "isObj", "parent", "type", "nameRef", "subClassedNode", "importedNode"],
   name: "UploadOBTree",
@@ -117,16 +122,19 @@ export default {
       return { "padding-left": `${this.depth * 50}px` };
     },
     modalNodeID() {
-      console.log(this.$store.state.nodeCount);
+      // console.log(this.$store.state.nodeCount);
       return "modal-add-child-" + this.$store.state.nodeCount;
     },
     isSelected() {
-      console.log('is selected computed')
+      // console.log('is selected computed')
       return this.$store.state.nameRef == this.nameRef;
     },
     toolTipID() {
 
       return "tooltip-id-" + this.name + "-" + this.parent_name;
+    },
+    sortedObjects() {
+      
     }
   },
   methods: {
@@ -165,14 +173,17 @@ export default {
     toggleSelect() {
       this.$store.commit("toggleSelectDefinitionNode")
       this.$store.commit("showDetailedView")
+
       this.$store.commit({
         type: 'selectNode',
         nodeName: this.name,
         nodeParent: this.parent,
         nodeType: this.type,
         nameRef: this.nameRef,
-        nodeDescription: this.nodeDescription
+        nodeDescription: this.nodeDescription,
       })
+
+      // console.log("toggle select: " + this.name)
     },
     objectRef(parent, child) {
       return parent + "-" + child;
@@ -204,13 +215,84 @@ export default {
 
     //returns children object from referenced (no unreferenced objects will be found, because this is below top level)
     returnNodeChildren(child_name, child_obj) {
+      let temp_child_obj = {}
+      // console.log("uploadOBTree, subclassednode: " + this.subClassedNode)
+      // if (this.subClassedNode) {
+      //   if (this.$store.state.schemaFile[child_name]["properties"]) {
+      //     temp_child_obj = JSON.parse(JSON.stringify(this.$store.state.schemaFile[child_name]["properties"]))
+      //     Object.keys(temp_child_obj).forEach( key => {
+      //         // console.log("key in deepcopy superclass: " + key)
+      //         temp_child_obj[key].fromSuperClass = true
+      //     })
+      //     // console.log("in ret node child, childname: " + child_name)
+      //     // console.log(temp_child_obj)
+      //     return temp_child_obj
+      //   } else {
+      //     // return children merging superClassed objects / elements with obj's children
+      //     // child_name is the name of the object, just need to return merge of children + superclass children
+          
+      //   }
+      // }
+
       // console.log(child_obj)
+      // if (child_obj["fromSuperClass"]) {
+        
+        // org
+      // } else {
+      // if (this.$store.state.schemaFile[child_name]["properties"]) {
+      //   temp_child_obj = JSON.parse(JSON.stringify(this.$store.state.schemaFile[child_name]["properties"]))
+      //   Object.keys(temp_child_obj).forEach( key => {
+      //       // console.log("key in deepcopy superclass: " + key)
+      //       temp_child_obj[key].fromSuperClass = true
+      //   })
+      //   // console.log("in ret node child, childname: " + child_name)
+      //   // console.log(temp_child_obj)
+      //   return temp_child_obj
+      // } else {
+      //   // return children merging superClassed objects / elements with obj's children
+      //   // child_name is the name of the object, just need to return merge of children + superclass children
+      //   for (let i in this.$store.state.schemaFile[child_name]["allOf"]) {
+      //     if (this.$store.state.schemaFile[child_name]["allOf"][i]["properties"]) {
+      //       temp_child_obj = JSON.parse(JSON.stringify(this.$store.state.schemaFile[child_name]["allOf"][i]["properties"]))
+      //       Object.keys(temp_child_obj).forEach( key => {
+      //           // console.log("key in deepcopy superclass: " + key)
+      //           temp_child_obj[key].fromSuperClass = true
+      //       })
+      //       return temp_child_obj
+      //     }
+      //   }
+      // }
+      // }
+      let superClass_lst = []
       if (this.$store.state.schemaFile[child_name]["properties"]) {
-        return this.$store.state.schemaFile[child_name]["properties"]
+        temp_child_obj = JSON.parse(JSON.stringify(this.$store.state.schemaFile[child_name]["properties"]))
+        if (child_obj["fromSuperClass"]) {
+          Object.keys(temp_child_obj).forEach( key => {
+              // console.log("key in deepcopy superclass: " + key)
+              temp_child_obj[key].fromSuperClass = true
+          })
+        }
+
+        // console.log("in ret node child, childname: " + child_name)
+        // console.log(temp_child_obj)
+        return temp_child_obj
       } else {
         // return children merging superClassed objects / elements with obj's children
         // child_name is the name of the object, just need to return merge of children + superclass children
-        
+        for (let i in this.$store.state.schemaFile[child_name]["allOf"]) {
+          if (this.$store.state.schemaFile[child_name]["allOf"][i]["properties"]) {
+            temp_child_obj = JSON.parse(JSON.stringify(this.$store.state.schemaFile[child_name]["allOf"][i]["properties"]))
+            if (child_obj["fromSuperClass"]) {
+              Object.keys(temp_child_obj).forEach( key => {
+                  // console.log("key in deepcopy superclass: " + key)
+                  temp_child_obj[key].fromSuperClass = true
+              })
+            }
+          } else {
+            superClass_lst.push(this.$store.state.schemaFile[child_name]["allOf"][i]["$ref"])
+          }
+        }
+        return {...temp_child_obj, ...miscUtilities.getSuperClassChildren(this.$store.state.schemaFile, superClass_lst, temp_child_obj)}
       }
     },
     fromSuperClass(childNode) {
@@ -288,7 +370,12 @@ export default {
 
 }
 
-.nodeName {
+.subClassSignifier {
   font-style: italic;
+}
+
+.importedNodeSignifier {
+  font-style: italic;
+  font-weight: bold;
 }
 </style>

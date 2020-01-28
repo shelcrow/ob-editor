@@ -1,9 +1,9 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "description": "111",
-        "title": "New Title",
-        "version": "111"
+        "description": "Description placeholder",
+        "title": "Title placeholder",
+        "version": "Version placeholder"
     },
     "paths": {
         "/WeatherDataRecords": {
@@ -49,34 +49,6 @@
                     }
                 }
             },
-            "DataRecord": {
-                "type": "object",
-                "properties": {
-                    "StartTime": {
-                        "$ref": "#/components/schemas/StartTime"
-                    },
-                    "EndTime": {
-                        "$ref": "#/components/schemas/EndTime"
-                    },
-                    "DeviceIdentifier": {
-                        "$ref": "#/components/schemas/DeviceIdentifier"
-                    }
-                }
-            },
-            "DeviceMaintenance": {
-                "type": "object",
-                "properties": {
-                    "MaintenanceDateLast": {
-                        "$ref": "#/components/schemas/MaintenanceDateLast"
-                    },
-                    "CalibrationDateLast": {
-                        "$ref": "#/components/schemas/CalibrationDateLast"
-                    },
-                    "CalibrationMethod": {
-                        "$ref": "#/components/schemas/CalibrationMethod"
-                    }
-                }
-            },
             "WeatherInstrumentDevice": {
                 "type": "object",
                 "properties": {
@@ -106,6 +78,9 @@
                     },
                     "OrientationInformation": {
                         "$ref": "#/components/schemas/OrientationInformation"
+                    },
+                    "PowerMeasurements": {
+                        "$ref": "#/components/schemas/PowerMeasurements"
                     }
                 }
             },
@@ -163,6 +138,9 @@
                 "properties": {
                     "CurrentTransducerRatio": {
                         "$ref": "#/components/schemas/CurrentTransducerRatio"
+                    },
+                    "MeterProduct": {
+                        "$ref": "#/components/schemas/MeterProduct"
                     }
                 }
             },
@@ -288,6 +266,9 @@
                     },
                     "TrackerPosition": {
                         "$ref": "#/components/schemas/TrackerPosition"
+                    },
+                    "MeterDevice": {
+                        "$ref": "#/components/schemas/MeterDevice"
                     }
                 }
             },
@@ -333,50 +314,6 @@
                     },
                     "ReferenceCellCalibrationConstantAtReportingCondition": {
                         "$ref": "#/components/schemas/ReferenceCellCalibrationConstantAtReportingCondition"
-                    }
-                }
-            },
-            "ASTME2848DataRecord": {
-                "type": "object",
-                "properties": {
-                    "IrradiancePlaneOfArray": {
-                        "$ref": "#/components/schemas/IrradiancePlaneOfArray"
-                    },
-                    "TemperatureAmbient": {
-                        "$ref": "#/components/schemas/TemperatureAmbient"
-                    },
-                    "WindSpeed": {
-                        "$ref": "#/components/schemas/WindSpeed"
-                    },
-                    "DataSelected": {
-                        "$ref": "#/components/schemas/DataSelected"
-                    },
-                    "DataFilterVisual": {
-                        "$ref": "#/components/schemas/DataFilterVisual"
-                    },
-                    "DataFilterOutliers": {
-                        "$ref": "#/components/schemas/DataFilterOutliers"
-                    },
-                    "DataFilterMissing": {
-                        "$ref": "#/components/schemas/DataFilterMissing"
-                    },
-                    "DataFilterCollectionSystem": {
-                        "$ref": "#/components/schemas/DataFilterCollectionSystem"
-                    },
-                    "DataFilterOutsideRange": {
-                        "$ref": "#/components/schemas/DataFilterOutsideRange"
-                    },
-                    "DataFilterStability": {
-                        "$ref": "#/components/schemas/DataFilterStability"
-                    },
-                    "DataFilterInverterClipping": {
-                        "$ref": "#/components/schemas/DataFilterInverterClipping"
-                    },
-                    "DataFilterShading": {
-                        "$ref": "#/components/schemas/DataFilterShading"
-                    },
-                    "DataFilterInstrumentAlignment": {
-                        "$ref": "#/components/schemas/DataFilterInstrumentAlignment"
                     }
                 }
             },
@@ -860,10 +797,14 @@
                 "type": "string",
                 "description": "Position of a tracker. Tracker position is described as a rotation where 0 degrees indicates the tracking surface is horizontal and facing the sky. Negative rotation is eastward for a north-south tracker axis."
             },
-            "status" : {
-                "type" : "string",
-                "description" : "Order Status",
-                "enum" : [ "placed", "approved", "delivered" ]
+            "status": {
+                "type": "string",
+                "description": "Order Status",
+                "enum": [
+                    "placed",
+                    "approved",
+                    "delivered"
+                ]
             },
             "Device": {
                 "allOf": [
@@ -890,6 +831,99 @@
                             },
                             "DeviceMaintenance": {
                                 "$ref": "#/components/schemas/DeviceMaintenance"
+                            }
+                        }
+                    }
+                ]
+            },
+            "DeviceMaintenance": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/DataRecord"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "MaintenanceDateLast": {
+                                "$ref": "#/components/schemas/MaintenanceDateLast"
+                            },
+                            "CalibrationDateLast": {
+                                "$ref": "#/components/schemas/CalibrationDateLast"
+                            },
+                            "CalibrationMethod": {
+                                "$ref": "#/components/schemas/CalibrationMethod"
+                            }
+                        }
+                    }
+                ]
+            },
+            "DataRecord": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/MeterDevice"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "StartTime": {
+                                "$ref": "#/components/schemas/StartTime"
+                            },
+                            "EndTime": {
+                                "$ref": "#/components/schemas/EndTime"
+                            },
+                            "DeviceIdentifier": {
+                                "$ref": "#/components/schemas/DeviceIdentifier"
+                            }
+                        }
+                    }
+                ]
+            },
+            "ASTME2848DataRecord": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/DeviceMaintenance"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "IrradiancePlaneOfArray": {
+                                "$ref": "#/components/schemas/IrradiancePlaneOfArray"
+                            },
+                            "TemperatureAmbient": {
+                                "$ref": "#/components/schemas/TemperatureAmbient"
+                            },
+                            "WindSpeed": {
+                                "$ref": "#/components/schemas/WindSpeed"
+                            },
+                            "DataSelected": {
+                                "$ref": "#/components/schemas/DataSelected"
+                            },
+                            "DataFilterVisual": {
+                                "$ref": "#/components/schemas/DataFilterVisual"
+                            },
+                            "DataFilterOutliers": {
+                                "$ref": "#/components/schemas/DataFilterOutliers"
+                            },
+                            "DataFilterMissing": {
+                                "$ref": "#/components/schemas/DataFilterMissing"
+                            },
+                            "DataFilterCollectionSystem": {
+                                "$ref": "#/components/schemas/DataFilterCollectionSystem"
+                            },
+                            "DataFilterOutsideRange": {
+                                "$ref": "#/components/schemas/DataFilterOutsideRange"
+                            },
+                            "DataFilterStability": {
+                                "$ref": "#/components/schemas/DataFilterStability"
+                            },
+                            "DataFilterInverterClipping": {
+                                "$ref": "#/components/schemas/DataFilterInverterClipping"
+                            },
+                            "DataFilterShading": {
+                                "$ref": "#/components/schemas/DataFilterShading"
+                            },
+                            "DataFilterInstrumentAlignment": {
+                                "$ref": "#/components/schemas/DataFilterInstrumentAlignment"
                             }
                         }
                     }

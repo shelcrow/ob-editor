@@ -124,7 +124,7 @@ export default {
         // reset export form after closing modal
         // doesn't reset because the watch doesn't work for some reason
         "$store.state.exportModalOpened"() {
-            console.log("watched")
+            // console.log("watched")
             for (let property in this.exportForm) {
                 this.exportForm[property] = null;
             }
