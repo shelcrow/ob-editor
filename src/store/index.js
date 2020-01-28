@@ -19,6 +19,7 @@ export default new Vuex.Store({
     nodeDataType: null,
     nodeParent: null,
     nodeDescription: null,
+    nodeEnum: null,
     nameRef: null,
     showEditNodeView: false,
     showDetailedView: true,
@@ -27,7 +28,7 @@ export default new Vuex.Store({
     showCreateDefinitionForm: false,
     nodeToAddToObject: '',
     nodeToAddListType: '',
-    superClassToAddToObject: '',
+    superClassToRemoveFromObject: '',
     refreshCreateDefn: false,
 
     // tracks whether exportModal has been opened, needed so a watcher can reset the export form.
@@ -40,9 +41,113 @@ export default new Vuex.Store({
     inXBRLTab: false,
 
     treeSearchTerm: '',
-
   },
+  
   mutations: {
+    /* 
+      Add enumeration to object
+    */
+    addEnumToObject(state, _enum) {
+      JSONEditor.addEnum(state.schemaFile, state.isSelected, _enum)
+      state.nodeEnum = state.schemaFile[state.isSelected]["enum"]
+    },
+
+    /*
+      Remove enumeration from object
+    */
+    removeEnumFromObject(state, _enum) {
+      JSONEditor.removeEnum(state.schemaFile, state.isSelected, _enum)
+      if (!state.schemaFile[state.isSelected]["enum"]) {
+        state.nodeEnum = null
+      }
+    },
+
+    /*
+      Add member to object
+    */
+    addNodeToObject(state, payload) {
+      let memberObj = {}
+      // console.log(payload.memberName)
+      if (payload.elemList == "OBOAS") {
+        // console.log("in oboas")
+        memberObj["$ref"] = "#/components/schemas/" + payload.memberName
+      } else if (payload.elemList == "solar-taxonomy") {
+        memberObj["$ref"] = "xbrl_all_elements.json#/" + payload.memberName
+      }
+      // console.log(memberObj)
+      // console.log(payload)
+      JSONEditor.addChildToObject(state.schemaFile, payload.defnName, payload.memberName, payload.memberType, memberObj)
+    },
+    
+    /*
+      Edit definition 
+    */
+    editNode(state, payload) {
+      JSONEditor.editNode(state.schemaFile, payload.nodeName, payload.nodeType, payload.nodeDescription)
+      state.nodeName = payload.nodeName
+      state.nodeDataType = payload.nodeType
+      state.nodeDescription = payload.nodeDescription
+    },
+
+    /*
+      Add Inheritance
+    */
+    addSuperClass(state, superClassName) {
+      JSONEditor.addSuperClass(state.schemaFile, state.isSelected, superClassName)
+    },
+
+    /*
+      Remove Inheritance
+    */
+    removeSuperClass(state, superClassName) {
+      JSONEditor.removeSuperClass(state.schemaFile, state.isSelected, superClassName)
+    },
+
+    /*
+      Tree view handling
+    */
+    toggleSelectDefinitionNode(state) {
+      state.selectDefinitionNode = false
+    },
+    selectNode(state, payload) {
+      state.isSelected = payload.nodeName;
+      state.nodeName = payload.nodeName;
+      state.nodeParent = payload.nodeParent
+      state.nodeType = payload.nodeType;
+      state.nodeDataType = payload.nodeType
+      state.nodeDescription = payload.nodeDescription
+      state.nameRef = payload.nameRef
+
+      if (state.schemaFile[state.isSelected]["enum"]) {
+        state.nodeEnum = state.schemaFile[state.isSelected]["enum"]
+      } else {
+        state.nodeEnum = null
+      }
+
+      // don't need loop if referencing top level, can just directly access with key to get value(s)
+      if (payload.nodeType == 'element') {
+        Object.keys(state.schemaFile).forEach(key => {
+          if (key == state.nodeName) {
+            state.nodeDataType = state.schemaFile[key]["type"]
+            state.nodeDescription = state.schemaFile[key]["description"]
+          }
+        })
+      }
+
+    },
+
+    /*
+      Editor view handling
+    */
+    showDetailedView(state) {
+      state.showEditNodeView = false
+      state.showDetailedView = true
+      state.showCreateDefinitionForm = false
+    },
+
+    /* 
+      JSON file handling
+    */
     updateOriginalJSONFile(state, json_str) {
       // uploadedOASFileOriginal is used for exporting
       // schemaFile is used for referencing the schema object in uploadedOASFileOriginal
@@ -65,7 +170,7 @@ export default new Vuex.Store({
     updateFlatObjNodes(state) {
       state.allObjNodesFlat = []
       Object.keys(state.schemaFile).forEach(key => {
-        if (state.schemaFile[key]["type"] == "object") {
+        if (state.schemaFile[key]["type"] == "object" || state.schemaFile[key]["allOf"]) {
           state.allObjNodesFlat.push(key)
         }
       })
@@ -75,26 +180,6 @@ export default new Vuex.Store({
       Object.keys(XBRLFile).forEach(key => {
         state.xbrlFlat.push(key)
       })
-    },
-    selectNode(state, payload) {
-      state.isSelected = payload.nodeName;
-      state.nodeName = payload.nodeName;
-      state.nodeParent = payload.nodeParent
-      state.nodeType = payload.nodeType;
-      state.nodeDataType = payload.nodeType
-      state.nodeDescription = payload.nodeDescription
-      state.nameRef = payload.nameRef
-
-      // don't need loop if referencing top level, can just directly access with key to get value(s)
-      if (payload.nodeType == 'element') {
-        Object.keys(state.schemaFile).forEach(key => {
-          if (key == state.nodeName) {
-            state.nodeDataType = state.schemaFile[key]["type"]
-            state.nodeDescription = state.schemaFile[key]["description"]
-          }
-        })
-      }
-
     },
     deleteNode(state,payload) {
       if (state.nodeType == 'element' && state.nodeParent == 'root') {
@@ -111,11 +196,7 @@ export default new Vuex.Store({
       state.showEditNodeView = true
       state.selectDefinitionNode = true
     },
-    showDetailedView(state) {
-      state.showEditNodeView = false
-      state.showDetailedView = true
-      state.showCreateDefinitionForm = false
-    },
+
 
     showCreateDefinitionForm(state) {
       state.showCreateDefinitionForm = true
@@ -123,9 +204,6 @@ export default new Vuex.Store({
       state.showCreateNodeObjectView = false    
       state.showEditNodeView = false
   
-    },
-    editNode(state) {
-      JSONEditor.editNode(state.schemaFile, state.nodeName, state.nodeDataType, state.nodeDescription)
     },
     createNodeElement(state, payload) {
       // JSONEditor.createNodeElement(state.schemaFile, payload.nodeName, payload.nodeType, payload.nodeElementDescription)
@@ -151,9 +229,7 @@ export default new Vuex.Store({
     createNodeObject(state, payload) {
       JSONEditor.createNodeObject(state.schemaFile, payload.objectName, payload.objectDescription, payload.elementForms)
     },
-    toggleSelectDefinitionNode(state) {
-      state.selectDefinitionNode = false
-    },
+
     createDefinition(state, payload) {
       let defn_attr = {}
       if (payload.definitionType == 'object') {
@@ -171,47 +247,6 @@ export default new Vuex.Store({
 
       Vue.set(state.schemaFile, payload.definitionName, defn_attr)
     },
-    setAddNodeToObject(state, payload) {
-      state.nodeToAddToObject = payload.definitionName
-      state.nodeToAddListType = payload.nodeListType
-    },
-    setAddNodeToObjectToNone(state) {
-      state.nodeToAddToObject = ''
-    },
-    addNodeToObject(state, payload) {
-      let nodeType = ""
-      let childObj = {}
-
-      // console.log(state.nodeToAddListType)
-      // console.log('nodeToAddToObject: ' + state.nodeToAddToObject) 
-      if (state.nodeToAddListType == "OBOAS") {
-        // console.log("in oboas")
-        childObj["$ref"] = "#/components/schemas/" + state.nodeToAddToObject
-        nodeType = state.schemaFile[state.nodeToAddToObject].type
-      } else if (state.nodeToAddListType == "solar-taxonomy") {
-        // console.log("in solar tax")
-        // console.log(state.xbrlFile[state.nodeToAddToObject])
-        childObj["$ref"] = "xbrl_all_elements.json#/" + state.nodeToAddToObject
-        nodeType = state.xbrlFile[state.nodeToAddToObject]["type"]
-        // console.log(nodeType)
-
-        // don't copy definition, just reference it
-        // if (!state.schemaFile[state.nodeToAddToObject]) {
-        //   Vue.set(state.schemaFile, state.nodeToAddToObject, state.xbrlFile[state.nodeToAddToObject])
-        // }
-      }
-      // console.log('ParentNode: ' + state.nodeParent)
-      // console.log('nodeType: ' + nodeType)
-      // console.log('node child is being added to: ' + state.nodeName)
-
-
-      JSONEditor.addChildToObject(state.schemaFile, state.nodeName, state.nodeToAddToObject, nodeType, childObj)
-    },
-    setAddSuperClassToObject(state, superClassName) {
-      console.log(superClassName)
-      state.superClassToAddToObject = superClassName
-    },
-
     // Refreshes form inputs when trying to hit add definition after already adding a defn
     refreshCreateDefnInputs(state, refreshBool) {
       state.refreshCreateDefn = refreshBool
@@ -219,18 +254,5 @@ export default new Vuex.Store({
     toggleExportModal(state) {
       state.exportModalOpened = !state.exportModalOpened
     },
-    addSuperClassToObject(state) {
-      console.log("Superclass to add: " + state.superClassToAddToObject)
-      let superClassObj = state.schemaFile[state.superClassToAddToObject]["properties"]
-      JSONEditor.addSuperClassToObject(state.schemaFile, state.isSelected, state.superClassToAddToObject, superClassObj)
-    }
-  },
-  // actions: {
-  //   deleteNode(context, payload) {
-  //     console.log(payload)
-  //     context.commit("toggleSelectNode"),
-  //     context.commit("deleteSingleNode", payload)
-  //   }
-  // },
-  modules: {}
+  }
 });

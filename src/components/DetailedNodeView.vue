@@ -1,22 +1,22 @@
 <template>
     <div class="detailed-view-container">
-        <span v-if="nodeDetails">
+        <span v-if="$store.state.isSelected">
             <b-table
                 stacked
-                :items="nodeDetails"
+                :items="defnDetails"
                 id="detailsTable"
                 ref="nodeDetailTable"
             ></b-table>
             <div class="detailed-view-buttons">
                 <span v-if="$store.state.inOASTab">
-                <b-button v-if="$store.state.nodeParent == 'root'" variant="primary" size="sm" @click="showEditNodeView">Edit definition</b-button>
-                <b-button v-else variant="primary" size="sm" v-b-modal.modal-edit-node>Edit definition</b-button>
+                    <b-button v-if="$store.state.nodeParent == 'root'" variant="primary" size="sm" @click="showEditNodeView">Edit definition</b-button>
+                    <b-button v-else variant="primary" size="sm" v-b-modal.modal-edit-node>Edit definition</b-button>
 
-                <b-button v-b-modal.modal-delete-node variant="danger" size="sm">
-                    <span v-if="$store.state.nodeParent == 'root'"> Delete </span>
-                    <span v-else>Remove </span>
-                </b-button>
-                <b-button variant="danger" @click="cancelDetailedView" size="sm">Cancel</b-button>
+                    <b-button v-b-modal.modal-delete-node variant="danger" size="sm">
+                        <span v-if="$store.state.nodeParent == 'root'"> Delete </span>
+                        <span v-else>Remove </span>
+                    </b-button>
+                    <!-- <b-button variant="danger" @click="cancelDetailedView" size="sm">Cancel</b-button> -->
                 </span>
             </div>
         </span>
@@ -63,6 +63,7 @@ export default {
     data() {
         return {
             nodeDetails: null,
+            defnName: '',
         }
     },
     methods: {
@@ -91,25 +92,58 @@ export default {
         }
     },
     watch: {
-        "$store.state.isSelected"() {
-            if (this.$store.state.isSelected) {
-                let temp_doc = this.$store.state.nodeDescription;
-                if (!temp_doc) {
-                    temp_doc = "Documentation not available"
-                }
-                let obj = {
-                    "Name": this.$store.state.nodeName,
-                    "Type": this.$store.state.nodeDataType,
-                    "Documentation": temp_doc
-                }
-                let arr = []
-                arr.push(obj)
-                this.nodeDetails = arr
-            } else {
-                this.nodeDetails = false
-            }
+        // "$store.state.isSelected"() {
+            //     this.defnName = this.$store.state.isSelected
+            //     console.log(this.defnName)
+            // if (this.$store.state.isSelected) {
+            //     let temp_doc = this.$store.state.nodeDescription;
+            //     let temp_superClassList = []
+            //     let temp_superClassListStr = ''
+            //     let temp_ret_obj = {}
 
-        }
+            //     if (this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"]) {
+            //         for (let i in this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"]) {
+            //             if (this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"][i]["$ref"]) {
+            //                 temp_superClassList.push(this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"][i]["$ref"].slice(this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"][i]["$ref"].lastIndexOf("/") + 1))
+            //             }
+            //         }
+            //     }
+
+            //     if (temp_superClassList.length == 0) {
+            //         temp_superClassListStr = 'None'
+            //     } else {
+            //         temp_superClassListStr = temp_superClassList.join(", ")
+            //     }
+
+            //     if (!temp_doc) {
+            //         temp_doc = "Documentation not available"
+            //     }
+
+            //     if (this.$store.state.schemaFile[this.$store.state.isSelected]["type"] == "object" || this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"]) {
+            //         temp_ret_obj = {
+            //             "Name": this.$store.state.nodeName,
+            //             "Type": this.$store.state.nodeDataType,
+            //             "Documentation": temp_doc,
+            //             "Superclasses": temp_superClassListStr
+            //         }
+            //     } else {
+            //         temp_ret_obj = {
+            //             "Name": this.$store.state.nodeName,
+            //             "Type": this.$store.state.nodeDataType,
+            //             "Documentation": temp_doc,
+            //         }
+            //     }
+
+
+
+            //     let arr = []
+            //     arr.push(temp_ret_obj)
+            //     this.nodeDetails = arr
+            // } else {
+            //     this.nodeDetails = false
+            // }
+
+        // }
     },
     computed: {
         deleteWarning() {
@@ -130,6 +164,93 @@ export default {
             } else {
                 return "Remove " + this.$store.state.nodeType;
             }
+        },
+        defnDetails() {
+            let temp_defn_name = this.defnName
+            let temp_doc = this.$store.state.nodeDescription;
+            let temp_superClassList = []
+            let temp_superClassListStr = ''
+            let temp_ret_obj = {}
+            let temp_enum = this.$store.state.nodeEnum
+            if (!temp_doc) {
+                temp_doc = "Documentation not available"
+            }
+
+            if (!temp_enum) {
+                temp_enum = "None"
+            } else {
+                temp_enum = temp_enum.join(', ')
+            }
+
+            if (this.$store.state.inOASTab) {
+                if (this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"]) {
+                    for (let i in this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"]) {
+                        if (this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"][i]["$ref"]) {
+                            temp_superClassList.push(this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"][i]["$ref"].slice(this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"][i]["$ref"].lastIndexOf("/") + 1))
+                        }
+                    }
+                }
+                
+                if (temp_superClassList.length == 0) {
+                    temp_superClassListStr = 'None'
+                } else {
+                    temp_superClassListStr = temp_superClassList.join(", ")
+                }
+                
+                // console.log('detailed node view: ' + this.$store.state.nodeEnum)
+
+                
+                if (this.$store.state.schemaFile[this.$store.state.isSelected]["type"] == "object" || this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"]) {
+                    temp_ret_obj = {
+                        "Name": this.$store.state.nodeName,
+                        "Type": this.$store.state.nodeDataType,
+                        "Documentation": temp_doc,
+                        "Superclasses": temp_superClassListStr
+                    }
+                } else {
+                    temp_ret_obj = {
+                        "Name": this.$store.state.nodeName,
+                        "Type": this.$store.state.nodeDataType,
+                        "Enumeration": temp_enum,
+                        "Documentation": temp_doc,
+                    }
+                }
+            } else {
+                if (this.$store.state.xbrlFile[this.$store.state.isSelected]["allOf"]) {
+                    for (let i in this.$store.state.xbrlFile[this.$store.state.isSelected]["allOf"]) {
+                        if (this.$store.state.xbrlFile[this.$store.state.isSelected]["allOf"][i]["$ref"]) {
+                            temp_superClassList.push(this.$store.state.xbrlFile[this.$store.state.isSelected]["allOf"][i]["$ref"].slice(this.$store.state.xbrlFile[this.$store.state.isSelected]["allOf"][i]["$ref"].lastIndexOf("/") + 1))
+                        }
+                    }
+                }
+
+                if (temp_superClassList.length == 0) {
+                    temp_superClassListStr = 'None'
+                } else {
+                    temp_superClassListStr = temp_superClassList.join(", ")
+                }
+
+                
+                if (this.$store.state.xbrlFile[this.$store.state.isSelected]["type"] == "object" || this.$store.state.xbrlFile[this.$store.state.isSelected]["allOf"]) {
+                    temp_ret_obj = {
+                        "Name": this.$store.state.nodeName,
+                        "Type": this.$store.state.nodeDataType,
+                        "Documentation": temp_doc,
+                        "Superclasses": temp_superClassListStr
+                    }
+                } else {
+                    temp_ret_obj = {
+                        "Name": this.$store.state.nodeName,
+                        "Type": this.$store.state.nodeDataType,
+                        "Documentation": temp_doc,
+                    }
+                }
+            }
+            
+            let arr = []
+            arr.push(temp_ret_obj)
+            // console.log(arr)
+            return arr
         }
     }
 }
@@ -152,7 +273,6 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
-
 }
 
 </style>

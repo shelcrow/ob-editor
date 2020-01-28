@@ -1,3 +1,7 @@
+<!-- 
+Component for adding members to objects
+-->
+
 <template>
     <div class="node-selector-container">
         <div class="source-checkboxes">
@@ -13,13 +17,14 @@
         >
             <b-form-input v-model="searchTerm" placeholder="Search for definition..."></b-form-input>
         </b-form-group>
+        <p>Members:</p>
         <div class="solar-taxonomy-node-list" v-if="selectedElemLst == 'solar-taxonomy'">
-            <li v-for="(definition, index) in filteredList" class="node-in-list" @click="nodeToAdd(index, definition)" :class="{'selected-node': index == selectedIndex}">
+            <li v-for="(definition, index) in filteredList" class="node-in-list" @click="memberToAdd(index, definition)" :class="{'selected-node': index == selectedIndex}">
                 {{ definition }}
             </li>
         </div>
         <div class="OBOAS-node-list" v-if="selectedElemLst == 'OBOAS'">
-            <li v-for="(definition, index) in filteredList" class="node-in-list" @click="nodeToAdd(index, definition)" :class="{'selected-node': index == selectedIndex}">
+            <li v-for="(definition, index) in filteredList" class="node-in-list" @click="memberToAdd(index, definition)" :class="{'selected-node': index == selectedIndex}">
                 {{ definition }}
             </li>
         </div>
@@ -30,52 +35,85 @@
             id="selectedElementTable"
             ref="selectedElementTable"
         ></b-table>
+        <br />
+        <div class="error-container">
+            <span v-if="showError">
+                <p id="error-msg">Can't select this, will cause infinite loop error</p>
+            </span>
+        </div>
+        <div class="submit-button-container">
+            <b-button variant="primary" @click="submitAddMember">
+                <span v-if="!hasSubmitted">Add</span>
+                <span v-else>Add another</span>
+            </b-button>
+        </div>
     </div>
 </template>
 
 <script>
+import * as miscUtilities from "../../utils/miscUtilities"
+
 export default {
     data() {
         return {
             searchTerm: '',
             selectedIndex: null,
             selectedElementDetails: null,
-            selectedElemLst: "OBOAS"
+            selectedElemLst: "OBOAS",
+            definitionToAdd: '',
+            memberType: '',
+            memberDescrip: '',
+            memberName: '',
+            hasSubmitted: false,
+            showError: false
         }
     },
     methods: {
-        nodeToAdd(index, definitionName) {
-            let elemType = ''
-            let elemDescrip = ''
-
+        memberToAdd(index, definitionName) {
             this.selectedIndex = index;
-
-            this.$store.commit({
-                type:"setAddNodeToObject", 
-                definitionName: definitionName,
-                nodeListType: this.selectedElemLst
-            })
+            this.memberName = definitionName
+            this.showError = false
 
             if (this.selectedElemLst == "OBOAS") {
-                elemType = this.$store.state.schemaFile[definitionName]["type"]
-                elemDescrip = this.$store.state.schemaFile[definitionName]["description"]
+                if (this.$store.state.schemaFile[definitionName]["allOf"]) {
+                    this.memberType = "object"
+                } else {
+                    this.memberType = this.$store.state.schemaFile[definitionName]["type"]
+                }
+                this.memberDescrip = this.$store.state.schemaFile[definitionName]["description"]
             } else if (this.selectedElemLst == "solar-taxonomy") {
-                elemType = this.$store.state.xbrlFile[definitionName]["type"]
-                elemDescrip = this.$store.state.xbrlFile[definitionName]["description"]
+                this.memberType = "string"
+                this.memberDescrip = this.$store.state.xbrlFile[definitionName]["description"]
             }
 
-            if (!elemDescrip) {
-                elemDescrip = "Documentation not available"
+            if (!this.memberDescrip) {
+                this.memberDescrip = "Documentation not available"
             }
+
             let obj = {
-                "Name": definitionName,
-                "Type": elemType,
-                "Documentation": elemDescrip
+                "Name": this.memberName,
+                "Type": this.memberType,
+                "Documentation": this.memberDescrip
             }
+
             let arr = []
             arr.push(obj)
             this.selectedElementDetails = arr
-        }
+        },
+        submitAddMember() {
+            if (miscUtilities.checkInfiniteLoopErr(this.$store.state.schemaFile, this.$store.state.isSelected, this.memberName)) {
+                this.showError = true
+            } else {
+                this.$store.commit({
+                    type: 'addNodeToObject',
+                    defnName: this.$store.state.isSelected,
+                    memberName: this.memberName,
+                    memberType: this.memberType,
+                    elemList: this.selectedElemLst
+                })
+                this.hasSubmitted = true
+            }
+        },
     },
     computed: {
         filteredList() {
@@ -127,9 +165,7 @@ export default {
     height: 250px;
     overflow-y: auto;
     background-color: white;
-    border-top: 1px solid black;
-    border-left: 1px solid black;
-    border-right: 1px solid black;
+    border: 1px solid black;
     margin-bottom: 4px;
 }
 
@@ -146,5 +182,20 @@ export default {
     margin-bottom: 15px;
 }
 
+.submit-button-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
+.error-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#error-msg {
+    color: red;
+    font-weight: bold;
+}
 </style>
