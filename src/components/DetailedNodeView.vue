@@ -20,6 +20,11 @@
                 </span>
             </div>
         </span>
+        <div class="error-container">
+            <span v-if="showError">
+                <p id="error-msg">Can't remove inherited objects, remove inheritance instead</p>
+            </span>
+        </div>
 
 
         <!-- modals -->
@@ -64,25 +69,24 @@ export default {
         return {
             nodeDetails: null,
             defnName: '',
+            showError: false,
         }
     },
     methods: {
         deleteNode(nodeName) {
-            this.$store.commit({
-                type: "deleteNode",
-                nodeName: nodeName,
-                OASFile: this.$store.state.schemaFile,
-                parent: this.$store.state.nodeParent,
-                nodeType: this.$store.state.nodeType
-            })
-            // this.$store.dispatch(
-            //     "deleteNode",
-            //     {
-            //     nodeName: nodeName,
-            //     OASFile: this.$store.state.schemaFile,
-            //     parent: this.$store.state.selectedParent
-            // })
-            this.$store.commit("selectNone")
+            if (this.$store.state.isSubClassedNode) {
+                this.showError = true
+            } else {
+                this.$store.commit({
+                    type: "deleteNode",
+                    nodeName: nodeName,
+                    OASFile: this.$store.state.schemaFile,
+                    parent: this.$store.state.nodeParent,
+                    nodeType: this.$store.state.nodeType,
+                })
+                this.$store.commit("selectNone")
+            }
+
         },
         showEditNodeView() {
             this.$store.commit("showEditNodeView")
@@ -92,6 +96,9 @@ export default {
         }
     },
     watch: {
+        "$store.state.isSelected"() {
+            this.showError = false
+        }
         // "$store.state.isSelected"() {
             //     this.defnName = this.$store.state.isSelected
             //     console.log(this.defnName)
@@ -275,4 +282,14 @@ export default {
     align-items: center;
 }
 
+.error-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#error-msg {
+    color: red;
+    font-weight: bold;
+}
 </style>

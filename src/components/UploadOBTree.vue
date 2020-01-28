@@ -181,6 +181,7 @@ export default {
         nodeType: this.type,
         nameRef: this.nameRef,
         nodeDescription: this.nodeDescription,
+        isSubClassedNode: this.subClassedNode
       })
 
       // console.log("toggle select: " + this.name)

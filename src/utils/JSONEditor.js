@@ -17,29 +17,91 @@ export function deleteAllNodes(JSONFile, nodeName) {
         if (key == nodeName) {
             Vue.delete(JSONFile, key)
         } else if (JSONFile[key].properties) {
-            deleteAllNodes(JSONFile[key].properties, nodeName)
+            Vue.delete(JSONFile[key].properties, nodeName)
+        } else if (JSONFile[key]["allOf"]) {
+            for (let i in JSONFile[key]["allOf"]) {
+                if (JSONFile[key]["allOf"][i]["properties"]) {
+                    Vue.delete(JSONFile[key]["allOf"][i]["properties"], nodeName)
+                }
+            }
         }
     })
 }
 
 //Remove single node from object. Removes every instance of the node which is in the object
 export function deleteNode(JSONFile, nodeName, parentName) {
-    Object.keys(JSONFile).forEach(key => {
-        if (parentName == 'root') {
-            if (key == nodeName) {
-                Vue.delete(JSONFile, nodeName)
-            }
-        }
-        if (key == parentName) {
-            if (JSONFile[key]["properties"][nodeName]) {
-                Vue.delete(JSONFile[key]["properties"], nodeName)
-            }
-        }
+    console.log('node name: ' + nodeName)
+    console.log('parent name: ' + parentName)
 
-        if (JSONFile[key] != undefined && JSONFile[key].properties) {
-            deleteNode(JSONFile[key].properties, nodeName, parentName)
-        } 
-    })
+    if (parentName == 'root') {
+        Vue.delete(JSONFile, nodeName)
+        for (let i in JSONFile) {
+            if (JSONFile[i]["properties"]) {
+                if (JSONFile[i]["properties"][nodeName]) {
+                    Vue.delete(JSONFile[i]["properties"], nodeName)
+                }
+            } else if (JSONFile[i]["allOf"]) {
+                for (let j in JSONFile[i]["allOf"]) {
+                    if (JSONFile[i]["allOf"][j]["$ref"]) {
+                        for (let k in JSONFile[i]["allOf"][j]["$ref"]) {
+                            let superClassSubStringIndex = JSONFile[i]["allOf"][j]["$ref"][k].lastIndexOf("/") + 1
+                            let superClassSubString = JSONFile[i]["allOf"][j]["$ref"][k].slice(superClassSubStringIndex)                 
+                            if (superClassSubString == nodeName) {
+                                Vue.delete(JSONFile[i]["allOf"][j]["$ref"], k)
+                            }           
+                        }
+                    } else if (JSONFile[i]["allOf"][j]["properties"]) {
+                        if (JSONFile[i]["allOf"][j]["properties"][nodeName]) {
+                            Vue.delete(JSONFile[i]["allOf"][j]["properties"], nodeName)
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        if (JSONFile[parentName]["properties"]) {
+            console.log("non-allOf")
+            Vue.delete(JSONFile[parentName]["properties"], nodeName)
+        } else {
+            console.log("allOf")
+            for (let i in JSONFile[parentName]["allOf"]) {
+                if (JSONFile[parentName]["allOf"][i]["properties"]) {
+                    Vue.delete(JSONFile[parentName]["allOf"][i]["properties"], nodeName)
+                }
+            }
+        }
+    }
+
+    // Object.keys(JSONFile).forEach(key => {
+    //     // if (parentName == 'root') {
+    //     //     if (key == nodeName) {
+    //     //         Vue.delete(JSONFile, nodeName)
+    //     //     }
+    //     // }
+    //     if (key == parentName) {
+    //         console.log("in")
+    //         console.log('key ' + key)
+    //         console.log('parentName ' + parentName)
+    //         console.log('nodeName' + nodeName)
+
+    //         console.log(JSONFile[key])
+    //         if (JSONFile[key]["properties"]) {
+    //             console.log("non-allOf")
+    //             Vue.delete(JSONFile[key]["properties"], nodeName)
+    //         } else {
+    //             console.log("allOf")
+    //             for (let i in JSONFile[key]["allOf"]) {
+    //                 if (JSONFile[key]["allOf"][i]["properties"]) {
+    //                     Vue.delete(JSONFile[key]["allOf"][i]["properties"], nodeName)
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     // if (JSONFile[key] != undefined && JSONFile[key].properties) {
+    //     //     deleteNode(JSONFile[key].properties, nodeName, parentName)
+    //     // } 
+    // })
 }
 
 //Edit node

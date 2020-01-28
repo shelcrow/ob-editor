@@ -30,6 +30,7 @@ export default new Vuex.Store({
     nodeToAddListType: '',
     superClassToRemoveFromObject: '',
     refreshCreateDefn: false,
+    isSubClassedNode: false,
 
     // tracks whether exportModal has been opened, needed so a watcher can reset the export form.
     exportModalOpened: false,
@@ -117,6 +118,9 @@ export default new Vuex.Store({
       state.nodeDataType = payload.nodeType
       state.nodeDescription = payload.nodeDescription
       state.nameRef = payload.nameRef
+      state.isSubClassedNode = payload.isSubClassedNode
+
+      console.log(payload.isSubClassedNode)
 
       if (state.schemaFile[state.isSelected]["enum"]) {
         state.nodeEnum = state.schemaFile[state.isSelected]["enum"]
@@ -182,10 +186,12 @@ export default new Vuex.Store({
       })
     },
     deleteNode(state,payload) {
+      // console.log('node name: ' + payload.nodeName)
+      // console.log('parent name: ' + payload.parent)
       if (state.nodeType == 'element' && state.nodeParent == 'root') {
         JSONEditor.deleteAllNodes(payload.OASFile, state.nodeName)
       } else {
-        JSONEditor.deleteNode(payload.OASFile, payload.nodeName, payload.parent )
+        JSONEditor.deleteNode(payload.OASFile, payload.nodeName, payload.parent)
       }
     },
     toggleSelectNode(state) {
