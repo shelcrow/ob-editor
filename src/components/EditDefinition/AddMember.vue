@@ -37,8 +37,9 @@ Component for adding members to objects
         ></b-table>
         <br />
         <div class="error-container">
-            <span v-if="showError">
-                <p id="error-msg">Can't select this, will cause infinite loop error</p>
+            <span v-if="showErrorInfinite || showErrorConflict">
+                <p id="error-msg" v-if="showErrorInfinite">Can't add this, will cause infinite loop error. Object or superclass contains the one you're trying to add</p>
+                <p id="error-msg" v-if="showErrorConflict">Can't add this, will cause conflict error. Object or superclass is being referenced already</p>
             </span>
         </div>
         <div class="submit-button-container">
@@ -65,14 +66,16 @@ export default {
             memberDescrip: '',
             memberName: '',
             hasSubmitted: false,
-            showError: false
+            showErrorInfinite: false,
+            showErrorConflict: false
         }
     },
     methods: {
         memberToAdd(index, definitionName) {
             this.selectedIndex = index;
             this.memberName = definitionName
-            this.showError = false
+            this.showErrorInfinite = false
+            this.showErrorConflict = false
 
             if (this.selectedElemLst == "OBOAS") {
                 if (this.$store.state.schemaFile[definitionName]["allOf"]) {
@@ -102,8 +105,14 @@ export default {
         },
         submitAddMember() {
             if (miscUtilities.checkInfiniteLoopErr(this.$store.state.schemaFile, this.$store.state.isSelected, this.memberName)) {
-                this.showError = true
-            } else {
+                this.showErrorInfinite = true
+            } 
+
+            if (miscUtilities.checkSuperClassObjConflict(this.$store.state.schemaFile, this.$store.state.isSelected, this.memberName)) {
+                this.showErrorConflict = true
+            }
+
+            if (!this.showErrorInfinite && !this.showErrorConflict) {
                 this.$store.commit({
                     type: 'addNodeToObject',
                     defnName: this.$store.state.isSelected,

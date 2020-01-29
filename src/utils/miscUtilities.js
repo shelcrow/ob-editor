@@ -114,7 +114,11 @@ export function checkInfiniteLoopErr(JSONFile, subClassName, superClassName) {
     // console.log(combinedObjsSuperClasses)
     for (let i in combinedObjsSuperClasses) {
         // console.log(i)
+
+        // get all superclasses from child objects
         checkBoth = checkBoth.concat(getAllSuperClassesInDefn(JSONFile, combinedObjsSuperClasses[i]))
+
+        // get all objects from superclasses
         checkBoth = checkBoth.concat(getAllObjInDefn(JSONFile, combinedObjsSuperClasses[i]))
     }
 
@@ -210,27 +214,65 @@ export function getAllObjInDefn(JSONFile, defnName) {
 //when adding an object member, check if it has already superclassed that object
 //when adding a superclass, check if it has already 
 // only need to check the top level for conflicts, don't need to check below that
-// export function checkSuperClassObjConflict(JSONFile, objectName, superClassOrObjectNameToAdd) {
-//     let objectNestedObjects = []
-//     let superClasses = []
-//     let superClassRefTopLevelObjs = []
-//     if (JSONFile[objectName]["allOf"]) {
-//         for (let i in JSONFile[objectName]["allOf"]) {
-//             if (JSONFile[objectName]["allOf"][i]["properties"]) {
-//                 if (isDefnObj(JSONFile, i)) {
-//                     objectNestedObjects.push(i)
-//                 }
-//             } else {
-//                 for (let j in JSONFile[objectName]["allOf"][i]["$ref"]) {
-//                     let superClassSubStringIndex = JSONFile[superClassName]["allOf"][i]["$ref"].lastIndexOf("/") + 1
-//                     let superClassSubString = JSONFile[superClassName]["allOf"][i]["$ref"].slice(superClassSubStringIndex)
-//                     superClasses.push(superClassSubString)
-//                 }                
-//             }
-//         }
-//     } else {
-//         for (let i in JSONFile[objectName]["properties"]) {
+// How to check for conflicts when adding a superclass or object to the defnObj:
+// - does the defnObj have a superclass 
+export function checkSuperClassObjConflict(JSONFile, defnName, superClassOrObjectNameToAdd) {
+    let defnTopLevelConflicts = getAllSuperClassesInDefn(JSONFile, defnName) 
+    for (let i in defnTopLevelConflicts) {
+        defnTopLevelConflicts = defnTopLevelConflicts.concat(getTopLevelObjects(JSONFile, defnTopLevelConflicts[i]))
+    }
+    defnTopLevelConflicts = defnTopLevelConflicts.concat(getTopLevelObjects(JSONFile, defnName))
+    defnTopLevelConflicts = [...new Set(defnTopLevelConflicts)]
+    // console.log(defnTopLevelConflicts)
 
-//         }
-//     }
-// }
+    let addingSuperClassOrObjectName = [superClassOrObjectNameToAdd]
+    addingSuperClassOrObjectName = addingSuperClassOrObjectName.concat(getAllSuperClassesInDefn(JSONFile, superClassOrObjectNameToAdd))
+    
+    for (let i in addingSuperClassOrObjectName) {
+        addingSuperClassOrObjectName = addingSuperClassOrObjectName.concat(getTopLevelObjects(JSONFile, addingSuperClassOrObjectName[i]))
+    }
+    addingSuperClassOrObjectName = addingSuperClassOrObjectName.concat(getTopLevelObjects(JSONFile, superClassOrObjectNameToAdd))
+    addingSuperClassOrObjectName = [...new Set(addingSuperClassOrObjectName)]
+    // console.log(addingSuperClassOrObjectName)
+
+
+    let hasConflict = false
+    // console.log('1: ' + hasConflict)
+    // refactor this to be more efficient
+    for (let i in defnTopLevelConflicts) {
+        for (let j in addingSuperClassOrObjectName) {
+            // console.log('i: ' + defnTopLevelConflicts[i] + '\nj: ' + addingSuperClassOrObjectName[j])
+
+            if (defnTopLevelConflicts[i] == addingSuperClassOrObjectName[j]) {
+                hasConflict = true
+                // console.log('2: ' + hasConflict)
+            }
+        }
+    }
+    // console.log('3: ' + hasConflict)
+    return hasConflict
+}
+
+export function getTopLevelObjects(JSONFile, defnName) {
+    let topLevelObjs = []
+
+    if (JSONFile[defnName]["allOf"]) {
+        for (let i in JSONFile[defnName]["allOf"]) {
+            if (JSONFile[defnName]["allOf"][i]["properties"]) {
+                for (let j in JSONFile[defnName]["allOf"][i]["properties"]) {
+                    if (isDefnObj(JSONFile, j)) {
+                        topLevelObjs.push(j)
+                    }
+                }
+            }
+        }
+    } else if (JSONFile[defnName]["properties"]) {
+        for (let i in JSONFile[defnName]["properties"]) {
+            if (isDefnObj(JSONFile, i)) {
+                topLevelObjs.push(i)
+            }
+        }
+    }
+
+    return topLevelObjs
+}
