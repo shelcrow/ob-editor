@@ -26,13 +26,15 @@ Component for adding inheritance to objects
         ></b-table>
         <br/>
         <div class="error-container">
-            <span v-if="showError">
-                <p id="error-msg">Can't select this, will cause infinite loop error</p>
+            <span v-if="showErrorInfinite || showErrorConflict">
+                <p id="error-msg" v-if="showErrorInfinite">Can't add this, will cause infinite loop error. Object or superclass contains the one you're trying to add</p>
+                <p id="error-msg" v-if="showErrorConflict">Can't add this, will cause conflict error. Object or superclass is being referenced already</p>
             </span>
         </div>
         <div class="submit-button-container">
             <b-button variant="primary" @click="submitAddSuperClass">
-                Add
+                <span v-if="!hasSubmitted">Add</span>
+                <span v-else>Add another</span>            
             </b-button>
         </div>
     </div>
@@ -51,14 +53,17 @@ export default {
             selectedIndex: null,
             selectedElementDetails: null,
             superClassName: '',
-            showError: false
+            showErrorInfinite: false,
+            showErrorConflict: false,
+            hasSubmitted: true
         }
     },
     methods: {
         selectSuperClassToAdd(index, definitionName) {
             this.selectedIndex = index;
             this.superClassName = definitionName
-            this.showError = false
+            this.showErrorInfinite = false
+            this.showErrorConflict = false
 
             let elemType = ''
             let elemDescrip = ''
@@ -87,14 +92,26 @@ export default {
         submitAddSuperClass() {
             // check if it causes an infinite heritance loop
             //this works
-            if (miscUtilities.checkInfiniteLoopErr(this.$store.state.schemaFile, this.$store.state.isSelected, this.superClassName)) {
-                this.showError = true
-            } else {
-                this.$store.commit("addSuperClass", this.superClassName)
-            }
+            // if (miscUtilities.checkInfiniteLoopErr(this.$store.state.schemaFile, this.$store.state.isSelected, this.superClassName)) {
+            //     this.showError = true
+            // } else {
+            //     this.$store.commit("addSuperClass", this.superClassName)
+            // }
             // this.$store.commit("addSuperClass", this.superClassName)
             // console.log(miscUtilities.getAllObjInDefn(this.$store.state.schemaFile, this.$store.state.isSelected))
             // console.log(miscUtilities.getAllSuperClassesInDefn(this.$store.state.schemaFile, this.$store.state.isSelected))
+            if (miscUtilities.checkInfiniteLoopErr(this.$store.state.schemaFile, this.$store.state.isSelected, this.superClassName)) {
+                this.showErrorInfinite = true
+            } 
+
+            if (miscUtilities.checkSuperClassObjConflict(this.$store.state.schemaFile, this.$store.state.isSelected, this.superClassName)) {
+                this.showErrorConflict = true
+            }
+
+            if (!this.showErrorInfinite && !this.showErrorConflict) {
+                this.$store.commit("addSuperClass", this.superClassName)
+                this.hasSubmitted = true
+            }
         }
     },
     computed: {
