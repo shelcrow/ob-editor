@@ -1,9 +1,9 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "description": "Description placeholder",
-        "title": "Title placeholder",
-        "version": "Version placeholder"
+        "description": "left blank",
+        "title": "OAS-references-JR",
+        "version": "0.1.1"
     },
     "paths": {
         "/WeatherDataRecords": {
@@ -49,6 +49,68 @@
                     }
                 }
             },
+            "Device": {
+                "type": "object",
+                "properties": {
+                    "DeviceIdentifier": {
+                        "$ref": "#/components/schemas/DeviceIdentifier"
+                    },
+                    "SerialNumber": {
+                        "$ref": "#/components/schemas/SerialNumber"
+                    },
+                    "Geolocation": {
+                        "$ref": "#/components/schemas/Geolocation"
+                    },
+                    "DeviceType": {
+                        "$ref": "#/components/schemas/DeviceType"
+                    },
+                    "ProductTypeIdentifier": {
+                        "$ref": "#/components/schemas/ProductTypeIdentifier"
+                    },
+                    "DeviceMaintenance": {
+                        "type": "object",
+                        "properties": {
+                            "MaintenanceDateLast": {
+                                "$ref": "#/components/schemas/MaintenanceDateLast"
+                            },
+                            "CalibrationDateLast": {
+                                "$ref": "#/components/schemas/CalibrationDateLast"
+                            },
+                            "CalibrationMethod": {
+                                "$ref": "#/components/schemas/CalibrationMethod"
+                            }
+                        }
+                    }
+                }
+            },
+            "DataRecord": {
+                "type": "object",
+                "properties": {
+                    "StartTime": {
+                        "$ref": "#/components/schemas/StartTime"
+                    },
+                    "EndTime": {
+                        "$ref": "#/components/schemas/EndTime"
+                    },
+                    "DeviceIdentifier": {
+                        "$ref": "#/components/schemas/DeviceIdentifier"
+                    }
+                }
+            },
+            "DeviceMaintenance": {
+                "type": "object",
+                "properties": {
+                    "MaintenanceDateLast": {
+                        "$ref": "#/components/schemas/MaintenanceDateLast"
+                    },
+                    "CalibrationDateLast": {
+                        "$ref": "#/components/schemas/CalibrationDateLast"
+                    },
+                    "CalibrationMethod": {
+                        "$ref": "#/components/schemas/CalibrationMethod"
+                    }
+                }
+            },
             "WeatherInstrumentDevice": {
                 "type": "object",
                 "properties": {
@@ -74,13 +136,56 @@
                         "$ref": "#/components/schemas/ManualLink"
                     },
                     "DeviceWarranty": {
-                        "$ref": "#/components/schemas/DeviceWarranty"
+                        "type": "object",
+                        "properties": {
+                            "EquipmentTypeWarrantyOutput": {
+                                "$ref": "#/components/schemas/EquipmentTypeWarrantyOutput"
+                            },
+                            "EquipmentTypeWarrantyStartDateMilestone": {
+                                "$ref": "#/components/schemas/EquipmentTypeWarrantyStartDateMilestone"
+                            },
+                            "EquipmentTypeWarranty": {
+                                "$ref": "#/components/schemas/EquipmentTypeWarranty"
+                            },
+                            "EquipmentTypeWarrantyTerm": {
+                                "$ref": "#/components/schemas/EquipmentTypeWarrantyTerm"
+                            },
+                            "EquipmentTypeWarrantyStartDate": {
+                                "$ref": "#/components/schemas/EquipmentTypeWarrantyStartDate"
+                            },
+                            "EquipmentTypeWarrantyEndDate": {
+                                "$ref": "#/components/schemas/EquipmentTypeWarrantyEndDate"
+                            },
+                            "ModulePerformanceWarrantyEndDate": {
+                                "$ref": "#/components/schemas/ModulePerformanceWarrantyEndDate"
+                            },
+                            "ModulePerformanceWarrantyGuaranteedOutput": {
+                                "$ref": "#/components/schemas/ModulePerformanceWarrantyGuaranteedOutput"
+                            },
+                            "ModuleMaterialsAndWorkmanShipWarrantyInitiationDate": {
+                                "$ref": "#/components/schemas/ModuleMaterialsAndWorkmanShipWarrantyInitiationDate"
+                            },
+                            "TrackerMaterialsWorkmanshipWarrantyExpiration": {
+                                "$ref": "#/components/schemas/TrackerMaterialsWorkmanshipWarrantyExpiration"
+                            },
+                            "TrackerMaterialsWorkmanshipWarrantyInitiation": {
+                                "$ref": "#/components/schemas/TrackerMaterialsWorkmanshipWarrantyInitiation"
+                            }
+                        }
                     },
                     "OrientationInformation": {
-                        "$ref": "#/components/schemas/OrientationInformation"
-                    },
-                    "PowerMeasurements": {
-                        "$ref": "#/components/schemas/PowerMeasurements"
+                        "type": "object",
+                        "properties": {
+                            "OrientationAzimuth": {
+                                "$ref": "#/components/schemas/OrientationAzimuth"
+                            },
+                            "OrientationTilt": {
+                                "$ref": "#/components/schemas/OrientationTilt"
+                            },
+                            "HeightAboveGround": {
+                                "$ref": "#/components/schemas/HeightAboveGround"
+                            }
+                        }
                     }
                 }
             },
@@ -138,9 +243,6 @@
                 "properties": {
                     "CurrentTransducerRatio": {
                         "$ref": "#/components/schemas/CurrentTransducerRatio"
-                    },
-                    "MeterProduct": {
-                        "$ref": "#/components/schemas/MeterProduct"
                     }
                 }
             },
@@ -201,7 +303,24 @@
                         "$ref": "#/components/schemas/SnowAccumulation"
                     },
                     "ReferenceCellMeasurement": {
-                        "$ref": "#/components/schemas/ReferenceCellMeasurement"
+                        "type": "object",
+                        "properties": {
+                            "TemperatureReferenceCell": {
+                                "$ref": "#/components/schemas/TemperatureReferenceCell"
+                            },
+                            "CurrentShortCircuit": {
+                                "$ref": "#/components/schemas/CurrentShortCircuit"
+                            },
+                            "VoltageOpenCircuit": {
+                                "$ref": "#/components/schemas/VoltageOpenCircuit"
+                            },
+                            "CurrentMaximumPower": {
+                                "$ref": "#/components/schemas/CurrentMaximumPower"
+                            },
+                            "VoltageMaximumPower": {
+                                "$ref": "#/components/schemas/VoltageMaximumPower"
+                            }
+                        }
                     }
                 }
             },
@@ -266,9 +385,6 @@
                     },
                     "TrackerPosition": {
                         "$ref": "#/components/schemas/TrackerPosition"
-                    },
-                    "MeterDevice": {
-                        "$ref": "#/components/schemas/MeterDevice"
                     }
                 }
             },
@@ -314,6 +430,50 @@
                     },
                     "ReferenceCellCalibrationConstantAtReportingCondition": {
                         "$ref": "#/components/schemas/ReferenceCellCalibrationConstantAtReportingCondition"
+                    }
+                }
+            },
+            "ASTME2848DataRecord": {
+                "type": "object",
+                "properties": {
+                    "IrradiancePlaneOfArray": {
+                        "$ref": "#/components/schemas/IrradiancePlaneOfArray"
+                    },
+                    "TemperatureAmbient": {
+                        "$ref": "#/components/schemas/TemperatureAmbient"
+                    },
+                    "WindSpeed": {
+                        "$ref": "#/components/schemas/WindSpeed"
+                    },
+                    "DataSelected": {
+                        "$ref": "#/components/schemas/DataSelected"
+                    },
+                    "DataFilterVisual": {
+                        "$ref": "#/components/schemas/DataFilterVisual"
+                    },
+                    "DataFilterOutliers": {
+                        "$ref": "#/components/schemas/DataFilterOutliers"
+                    },
+                    "DataFilterMissing": {
+                        "$ref": "#/components/schemas/DataFilterMissing"
+                    },
+                    "DataFilterCollectionSystem": {
+                        "$ref": "#/components/schemas/DataFilterCollectionSystem"
+                    },
+                    "DataFilterOutsideRange": {
+                        "$ref": "#/components/schemas/DataFilterOutsideRange"
+                    },
+                    "DataFilterStability": {
+                        "$ref": "#/components/schemas/DataFilterStability"
+                    },
+                    "DataFilterInverterClipping": {
+                        "$ref": "#/components/schemas/DataFilterInverterClipping"
+                    },
+                    "DataFilterShading": {
+                        "$ref": "#/components/schemas/DataFilterShading"
+                    },
+                    "DataFilterInstrumentAlignment": {
+                        "$ref": "#/components/schemas/DataFilterInstrumentAlignment"
                     }
                 }
             },
@@ -797,151 +957,91 @@
                 "type": "string",
                 "description": "Position of a tracker. Tracker position is described as a rotation where 0 degrees indicates the tracking surface is horizontal and facing the sky. Negative rotation is eastward for a north-south tracker axis."
             },
-            "status": {
+            "AddressLine1": {
                 "type": "string",
-                "description": "Order Status",
-                "enum": [
-                    "placed",
-                    "approved",
-                    "delivered"
-                ]
+                "description": "First line of a mailing or physical address."
             },
-            "Device": {
-                "allOf": [
-                    {
-                        "$ref": "#/components/schemas/Product"
-                    },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "DeviceIdentifier": {
-                                "$ref": "#/components/schemas/DeviceIdentifier"
-                            },
-                            "SerialNumber": {
-                                "$ref": "#/components/schemas/SerialNumber"
-                            },
-                            "Geolocation": {
-                                "$ref": "#/components/schemas/Geolocation"
-                            },
-                            "DeviceType": {
-                                "$ref": "#/components/schemas/DeviceType"
-                            },
-                            "ProductTypeIdentifier": {
-                                "$ref": "#/components/schemas/ProductTypeIdentifier"
-                            },
-                            "DeviceMaintenance": {
-                                "$ref": "#/components/schemas/DeviceMaintenance"
-                            }
-                        }
-                    }
-                ]
+            "AddressLine2": {
+                "type": "string",
+                "description": "Second line of a mailing or physical address."
             },
-          "WeatherInstrumentDevice": {
-            "type": "object",
-            "properties": {
-              "AccuracyClass": {
-                "$ref": "#/components/schemas/AccuracyClass"
-              },
-              "CalibrationInterval": {
-                "$ref": "#/components/schemas/CalibrationInterval"
-              },
-              "PVSystemIdentifier": {
-                "$ref": "#/components/schemas/PVSystemIdentifier"
-              },
-            }
-          },
-            "DeviceMaintenance": {
-                "allOf": [
-                    {
-                        "$ref": "#/components/schemas/DataRecord"
-                    },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "MaintenanceDateLast": {
-                                "$ref": "#/components/schemas/MaintenanceDateLast"
-                            },
-                            "CalibrationDateLast": {
-                                "$ref": "#/components/schemas/CalibrationDateLast"
-                            },
-                            "CalibrationMethod": {
-                                "$ref": "#/components/schemas/CalibrationMethod"
-                            }
-                        }
-                    }
-                ]
+            "AddressLine3": {
+                "type": "string",
+                "description": "Third line of a mailing or physical address."
             },
-            "DataRecord": {
-                "allOf": [
-                    {
-                        "$ref": "#/components/schemas/MeterDevice"
-                    },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "StartTime": {
-                                "$ref": "#/components/schemas/StartTime"
-                            },
-                            "EndTime": {
-                                "$ref": "#/components/schemas/EndTime"
-                            },
-                            "DeviceIdentifier": {
-                                "$ref": "#/components/schemas/DeviceIdentifier"
-                            }
-                        }
-                    }
-                ]
+            "City": {
+                "type": "string",
+                "description": "Name of the city in the physical or mailing address."
             },
-            "ASTME2848DataRecord": {
-                "allOf": [
-                    {
-                        "$ref": "#/components/schemas/DeviceMaintenance"
+            "StateProvince": {
+                "type": "string",
+                "description": "State of a Province of the mailing or physical address. - NEEDS ENUMERATED VALUES"
+            },
+            "ZipPostalCode": {
+                "type": "string",
+                "description": "Zip Code / Postal Code of a mailing or physical address."
+            },
+            "Country": {
+                "type": "string",
+                "description": "Country of a mailing or physical address - NEEDS ENUMERATED VALUES"
+            },
+            "Latitude": {
+                "type": "number",
+                "description": "Decimal value of latitude of the physical site."
+            },
+            "Longitude": {
+                "type": "number",
+                "description": "Decimal value of longitude of the physical site."
+            },
+            "Address": {
+                "type": "object",
+                "description": "Physical or Mailing address",
+                "properties": {
+                    "AddressLine1": {
+                        "type": "string",
+                        "description": "First line of a mailing or physical address."
                     },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "IrradiancePlaneOfArray": {
-                                "$ref": "#/components/schemas/IrradiancePlaneOfArray"
-                            },
-                            "TemperatureAmbient": {
-                                "$ref": "#/components/schemas/TemperatureAmbient"
-                            },
-                            "WindSpeed": {
-                                "$ref": "#/components/schemas/WindSpeed"
-                            },
-                            "DataSelected": {
-                                "$ref": "#/components/schemas/DataSelected"
-                            },
-                            "DataFilterVisual": {
-                                "$ref": "#/components/schemas/DataFilterVisual"
-                            },
-                            "DataFilterOutliers": {
-                                "$ref": "#/components/schemas/DataFilterOutliers"
-                            },
-                            "DataFilterMissing": {
-                                "$ref": "#/components/schemas/DataFilterMissing"
-                            },
-                            "DataFilterCollectionSystem": {
-                                "$ref": "#/components/schemas/DataFilterCollectionSystem"
-                            },
-                            "DataFilterOutsideRange": {
-                                "$ref": "#/components/schemas/DataFilterOutsideRange"
-                            },
-                            "DataFilterStability": {
-                                "$ref": "#/components/schemas/DataFilterStability"
-                            },
-                            "DataFilterInverterClipping": {
-                                "$ref": "#/components/schemas/DataFilterInverterClipping"
-                            },
-                            "DataFilterShading": {
-                                "$ref": "#/components/schemas/DataFilterShading"
-                            },
-                            "DataFilterInstrumentAlignment": {
-                                "$ref": "#/components/schemas/DataFilterInstrumentAlignment"
-                            }
-                        }
+                    "AddressLine2": {
+                        "type": "string",
+                        "description": "Second line of a mailing or physical address."
+                    },
+                    "AddressLine3": {
+                        "type": "string",
+                        "description": "Third line of a mailing or physical address."
+                    },
+                    "City": {
+                        "type": "string",
+                        "description": "Name of the city in the physical or mailing address."
+                    },
+                    "StateProvince": {
+                        "type": "string",
+                        "description": "State of a Province of the mailing or physical address."
+                    },
+                    "ZipPostalCode": {
+                        "type": "string",
+                        "description": "Zip Code / Postal Code of a mailing or physical address."
+                    },
+                    "Country": {
+                        "type": "string",
+                        "description": "Country of a mailing or physical address"
+                    },
+                    "Latitude": {
+                        "type": "number",
+                        "description": "Decimal value of latitude of the physical site."
+                    },
+                    "Longitude": {
+                        "type": "number",
+                        "description": "Decimal value of longitude of the physical site."
+                    },
+                    "County": {
+                        "type": "string",
+                        "description": "County of the physical or mailing address"
                     }
-                ]
+                }
+            },
+            "County": {
+                "type": "string",
+                "description": "County of the physical or mailing address - NEEDS ENUMERATED VALUES"
             }
         }
     }

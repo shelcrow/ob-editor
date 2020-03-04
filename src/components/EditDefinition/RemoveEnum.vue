@@ -52,6 +52,7 @@ export default {
 .enum-in-enum-list {
     list-style: none;
     border-bottom: 1px solid black;
+    padding-left: 5px;
 }
 
 .enum-list {

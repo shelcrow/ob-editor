@@ -12,19 +12,19 @@ Is the parent of all the editing components
             <b-button class="edit-btn" v-if="currentEditingView == 'EditDefinitionFormDisabled'" variant='secondary' @click="editDefinition">
                 Edit Attributes
             </b-button>
-            <b-button class="edit-btn" v-if="$store.state.nodeDataType == 'object' && currentEditingView == 'EditDefinitionFormDisabled'" variant='secondary' @click="addMember">
+            <b-button class="edit-btn" v-if="$store.state.nodeType == 'object' && currentEditingView == 'EditDefinitionFormDisabled' && !$store.state.isTaxonomyElement" variant='secondary' @click="addMember">
                 Add member
             </b-button>
-            <b-button class="edit-btn" v-if="$store.state.nodeDataType == 'object' && currentEditingView == 'EditDefinitionFormDisabled'" variant='secondary' @click="addInheritance">
+            <b-button class="edit-btn" v-if="$store.state.nodeType == 'object' && currentEditingView == 'EditDefinitionFormDisabled'" variant='secondary' @click="addInheritance">
                 Add Inheritance
             </b-button>
-            <b-button class="edit-btn" v-if="$store.state.nodeDataType == 'object' && currentEditingView == 'EditDefinitionFormDisabled'" variant='secondary' @click="removeInheritance">
+            <b-button class="edit-btn" v-if="$store.state.nodeType == 'object' && currentEditingView == 'EditDefinitionFormDisabled'" variant='secondary' @click="removeInheritance">
                 Remove Inheritance
             </b-button>
-            <b-button class="edit-btn" v-if="$store.state.nodeDataType != 'object' && currentEditingView == 'EditDefinitionFormDisabled'" variant='secondary' @click="addEnum">
+            <b-button class="edit-btn" v-if="($store.state.nodeType == 'element' || $store.state.isTaxonomyElement) && currentEditingView == 'EditDefinitionFormDisabled'" variant='secondary' @click="addEnum">
                 Add Enumeration
             </b-button>
-            <b-button class="edit-btn" v-if="$store.state.nodeDataType != 'object' && currentEditingView == 'EditDefinitionFormDisabled'" variant='secondary' @click="removeEnum">
+            <b-button class="edit-btn" v-if="($store.state.nodeType == 'element' || $store.state.isTaxonomyElement) && currentEditingView == 'EditDefinitionFormDisabled'" variant='secondary' @click="removeEnum">
                 Remove Enumeration
             </b-button>
         </span>
@@ -94,7 +94,6 @@ export default {
         },
         addMember() {
             this.currentEditingView = "AddMember"
-            this.$store.commit("updateFlatNodes")
         },
         addInheritance() {
             this.currentEditingView = "AddInheritance"

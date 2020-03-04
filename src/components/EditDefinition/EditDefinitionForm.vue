@@ -17,7 +17,7 @@ Child of EditDefinition, edit definition form
                 label="Definition OAS type:"
                 label-for="node-type-input"
             >
-                <b-form-select id="edit-node-type-input" v-model="form.nodeType" :options="dataTypes" :disabled="hasSubmitted"></b-form-select>
+                <b-form-input id="edit-node-type-input" v-model="form.nodeType" :options="dataTypes" disabled></b-form-input>
             </b-form-group>
             <b-form-group
                 id="edit-node-enum-input-group"
@@ -50,7 +50,7 @@ import * as miscUtilities from "../../utils/miscUtilities.js"
 export default {
     created() {
         this.form.nodeName = this.$store.state.nodeName;
-        this.form.nodeType = this.$store.state.nodeDataType
+        this.form.nodeType = this.$store.state.nodeType
         this.form.nodeDescription = this.$store.state.nodeDescription
         this.form.nodeEnum = this.$store.state.nodeEnum
     },
@@ -71,7 +71,7 @@ export default {
             this.$store.commit({
                 type: "editNode",
                 nodeName: this.form.nodeName,
-                nodeType: this.form.nodeType,
+                // nodeType: this.form.nodeType,
                 nodeDescription: this.form.nodeDescription
             })
             this.hasSubmitted = true
@@ -79,7 +79,7 @@ export default {
     },
     computed: {
         dataTypes() {
-            if (miscUtilities.isDefnObj(this.$store.state.schemaFile, this.form.nodeName)) {
+            if (miscUtilities.isDefnObj(this.$store.state.currentFile.file, this.form.nodeName)) {
                 return ['object']
             } else {
                 return ['string', 'number', 'integer', 'boolean', 'array']

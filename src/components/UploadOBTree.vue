@@ -6,18 +6,30 @@
       :style=" isSelected ? 'background-color: #89CFF0;' : '' "
     >
       <div class="element-div" :style="indent">
-        <span @click="toggleExpand">
+        <span @click="toggleExpandObject">
           <v-icon
             v-if="isObj && expandObject"
             name="minus-square"
             class="icon-expandable clickable"
           />
-        </span>
-        <span @click="toggleExpand">
           <v-icon
             v-if="isObj && !expandObject"
             name="plus-square"
             class="icon-expandable clickable"
+            style="cursor: pointer"
+          />
+        </span>
+        <span @click="toggleExpandElement">
+          <v-icon
+            v-if="isTaxonomyElement && !expandElement"
+            name="circle"
+            class="taxonomy-element-icon-expandable clickable"
+            style="cursor: pointer"
+          />
+          <v-icon
+            v-if="isTaxonomyElement && expandElement"
+            name="circle"
+            class="taxonomy-element-icon-expandable clickable"
             style="cursor: pointer"
           />
         </span>
@@ -64,34 +76,126 @@
       v-for="(item, child_name) in children"
       :key="child_name"
     >  -->
-    <span 
-      v-for="(item, child_name) in children"
-      :key="child_name"
-    > 
+    <span v-if="children">
+      <span 
+        v-for="arr in sortedObjects()"
+      > 
+        <!-- object -->
+        <UploadOBTree
+          v-if="expandObject && arr[3] == 'Object'"
+          :name="arr[0]"
+          :children="arr[1].properties"
+          :depth="depth + 1"
+          :nodeDescription="arr[1].description"
+          :isObj="true"
+          :parent=name
+          type="object"
+          :ref="objectRef(arr[0], file.fileName)"
+          :nameRef="objectRef(arr[0], file.fileName)"
+          :file="file"
+          :isTaxonomyElement="false"
+          :subClassedNode="arr[2]"
+      ></UploadOBTree> 
+
+      <!-- taxonomy element -->
       <UploadOBTree
-        v-if="expandObject && isNodeObject(child_name)"
-        :name="child_name"
-        :depth="depth + 1"
-        :children="returnNodeChildren(child_name, item)"
-        :nodeDescription="item.description"
-        :isObj="true"
-        :parent=name
-        type="object"
-        :nameRef="objectRef(name, child_name)"
-        :subClassedNode="fromSuperClass(item)"
-      ></UploadOBTree>
+          v-else-if="expandObject && arr[3] == 'TaxonomyElement'"
+          :isObj="false"
+          :name="arr[0]"
+          :children="subClassChildren(file.file, arr[4], arr[1])"
+          :depth="depth + 1"
+          :nodeDescription="getNodeDescription(arr[1])"
+          :parent=name
+          type="object"
+          :ref="objectRef(arr[0], file.fileName)"
+          :nameRef="objectRef(arr[0], file.fileName)"
+          :file="file"
+          :isTaxonomyElement="true"
+          :subClassedNode="arr[2]"
+      >
+      </UploadOBTree>
+
+      <!-- allOf Obj -->
       <UploadOBTree
-        v-else-if="expandObject && !isNodeObject(child_name)"
-        :name="child_name"
-        :depth="depth + 1"
-        :nodeDescription="item.description"
-        :parent=name
-        type="element"
-        :nameRef="objectRef(name, child_name)"
-        :subClassedNode="fromSuperClass(item)"
-        :importedNode="fromImport(item)"
-      ></UploadOBTree>
+          v-else-if="expandObject && arr[3] == 'ObjWithInherit'"
+          :name="arr[0]"
+          :children="subClassChildren(file.file, arr[4], arr[1])"
+          :depth="depth + 1"
+          :nodeDescription="getNodeDescription(arr[1])"
+          :isObj="true"
+          :parent=name
+          type="object"
+          :ref="objectRef(arr[0], file.fileName)"
+          :nameRef="objectRef(arr[0], file.fileName)"
+          :file="file"
+          :isTaxonomyElement="false"
+          :subClassedNode="arr[2]"
+      ></UploadOBTree> 
+
+      <UploadOBTree
+          v-else-if="expandElement && !(arr[3] == 'ObjWithInherit' || arr[3] == 'TaxonomyElement' || arr[3] == 'Object')"
+          :isObj="false"
+          :name="arr[0]"
+          :depth="depth + 1"
+          :nodeDescription="getNodeDescription(arr[1])"
+          :parent="name"
+          type="element"
+          :ref="objectRef(arr[0], file.fileName)"
+          :nameRef="objectRef(arr[0], file.fileName)"
+          :file="file"
+          :isTaxonomyElement="false"
+          :subClassedNode="arr[2]"
+      >
+      </UploadOBTree>
+
+      <!-- ^^^^ working ^^^^ -->
+
+        <!-- working taxonomy element -->
+        <!-- <UploadOBTree
+          v-if="expandObject && arr[2]=='TaxonomyElement'"
+          :name="arr[0]"
+          :depth="depth + 1"
+          :nodeDescription="arr[1].description"
+          :parent=name
+          type="element"
+          :ref="objectRef(arr[0], file.fileName)"
+          :nameRef="objectRef(arr[0], file.fileName)"
+          :file="file"
+        ></UploadOBTree> -->
+
+        <!-- obj or AllOf obj -->
+        <!-- <UploadOBTree
+          v-if="expandObject && isNodeObject(child_name)"
+          :name="child_name"
+          :depth="depth + 1"
+          :children="returnNodeChildren(child_name, item)"
+          :nodeDescription="item.description"
+          :isObj="true"
+          :parent=name
+          type="object"
+          :ref="objectRef(child_name, file.fileName)"
+          :nameRef="objectRef(child_name, file.fileName)"
+          :subClassedNode="fromSuperClass(item)"
+          :file="file"
+        ></UploadOBTree> -->
+        <!-- TaxonomyElement -->
+
+        <!-- <UploadOBTree
+          v-if="expandObject && arr[2]=='TaxonomyElement'"
+          :name="arr[0]"
+          :depth="depth + 1"
+          :nodeDescription="arr[1].description"
+          :parent=name
+          type="element"
+          :ref="objectRef(arr[0], file.fileName)"
+          :nameRef="objectRef(arr[0], file.fileName)"
+          :subClassedNode="fromSuperClass(item)"
+          :importedNode="fromImport(item)"
+          :file="file"
+        ></UploadOBTree> -->
+      </span>
     </span>
+
     <!-- <UploadOBTree
       v-if="expandObject"
       v-for="(item, child_name) in children"
@@ -108,14 +212,29 @@
 import * as miscUtilities from "../utils/miscUtilities"
 
 export default {
-  props: ["name", "children", "depth", "expandAllObjects", "parent_name", "nodeDescription", "isObj", "parent", "type", "nameRef", "subClassedNode", "importedNode"],
+  props: ["name", "children", "depth", "expandAllObjects", "parent_name", 
+    "nodeDescription", "isObj", "parent", "type", "nameRef", "subClassedNode", 
+    "importedNode", "file", "isTaxonomyElement"
+  ],
   name: "UploadOBTree",
   data() {
     return {
       expandObject: true,
+      expandElement: false,
       isObject: Boolean(this.children),
       parents: this.parent
     };
+  },
+  created() {
+    if (this.name == 'TaxonomyElement') {
+      this.expandElement = true
+    }
+
+    // if (this.subClassedNode) {
+    //   console.log('sub classed node: ')
+    //   console.log(this.name)
+    // }
+
   },
   computed: {
     indent() {
@@ -133,13 +252,14 @@ export default {
 
       return "tooltip-id-" + this.name + "-" + this.parent_name;
     },
-    sortedObjects() {
-      
-    }
   },
   methods: {
-    toggleExpand() {
+    toggleExpandObject() {
       this.expandObject = !this.expandObject;
+      this.expandElement = !this.expandElement;
+    },
+    toggleExpandElement() {
+      this.expandElement = !this.expandElement;
     },
     collapse() {
       this.expandObject = false;
@@ -148,11 +268,11 @@ export default {
       this.expandObject = true;
     },
     showAddChildModal() {
-      console.log("Add child");
+      // console.log("Add child");
       this.$store.commit("showAddChildModal", this.parent_name);
     },
     showEditNodeModal() {
-      console.log("Edit node modal");
+      // console.log("Edit node modal");
       this.$store.commit({
         type: "showEditNodeModal",
         parent_name: this.parent_name,
@@ -161,8 +281,8 @@ export default {
       });
     },
     showDeleteNodeModal() {
-      console.log("Delete node, from tree:");
-      console.log("Parent name: " + this.parent);
+      // console.log("Delete node, from tree:");
+      // console.log("Parent name: " + this.parent);
       this.$store.commit({
         type: "showDeleteNodeModal",
         node_name: this.name,
@@ -171,8 +291,11 @@ export default {
       });
     },
     toggleSelect() {
+      // console.log('in toggleSelect uploadOB: ')
+      // console.log('name: '+ this.name + '\ntype: ' + this.type)
       this.$store.commit("toggleSelectDefinitionNode")
       this.$store.commit("showDetailedView")
+      // console.log(this.file)
 
       this.$store.commit({
         type: 'selectNode',
@@ -181,29 +304,30 @@ export default {
         nodeType: this.type,
         nameRef: this.nameRef,
         nodeDescription: this.nodeDescription,
-        isSubClassedNode: this.subClassedNode
+        isSubClassedNode: this.subClassedNode,
+        isTaxonomyElement: this.isTaxonomyElement
       })
+      // console.log('toggle select in uploadOBTree: ' + this.parent)
 
       // console.log("toggle select: " + this.name)
     },
-    objectRef(parent, child) {
-      return parent + "-" + child;
+    objectRef(nodeName, fileName) {
+      return fileName + "-" + nodeName;
     },
 
     // checks if node is obj, returns t or f
     isNodeObject(child_name) {
-      if (this.$store.state.schemaFile[child_name]) {
-        if (this.$store.state.schemaFile[child_name]["type"] == "object" || this.$store.state.schemaFile[child_name]["allOf"]) {
+      if (this.file.file[child_name]) {
+        if ((this.file.file[child_name]["type"] == "object" || this.file.file[child_name]["allOf"]) 
+          && !miscUtilities.isTaxonomyElement(file.file, child_name)) {
           // if (this.$store.state.schemaFile[child_name]["allOf"]) {
           //   console.log(this.$store.state.schemaFile[child_name]["allOf"])
           // }
           return true
         } else {
           return false
-        }        
-      } else if (this.$store.state.xbrlFile[child_name]) {
-        return false
-      }
+        }   
+      }     
       // if (this.$store.state.schemaFile[child_name]["type"] == "object" || this.$store.state.schemaFile[child_name]["allOf"]) {
       //   // if (this.$store.state.schemaFile[child_name]["allOf"]) {
       //   //   console.log(this.$store.state.schemaFile[child_name]["allOf"])
@@ -265,8 +389,8 @@ export default {
       // }
       // }
       let superClass_lst = []
-      if (this.$store.state.schemaFile[child_name]["properties"]) {
-        temp_child_obj = JSON.parse(JSON.stringify(this.$store.state.schemaFile[child_name]["properties"]))
+      if (this.file.file[child_name]["properties"]) {
+        temp_child_obj = JSON.parse(JSON.stringify(this.file.file[child_name]["properties"]))
         if (child_obj["fromSuperClass"]) {
           Object.keys(temp_child_obj).forEach( key => {
               // console.log("key in deepcopy superclass: " + key)
@@ -280,9 +404,9 @@ export default {
       } else {
         // return children merging superClassed objects / elements with obj's children
         // child_name is the name of the object, just need to return merge of children + superclass children
-        for (let i in this.$store.state.schemaFile[child_name]["allOf"]) {
-          if (this.$store.state.schemaFile[child_name]["allOf"][i]["properties"]) {
-            temp_child_obj = JSON.parse(JSON.stringify(this.$store.state.schemaFile[child_name]["allOf"][i]["properties"]))
+        for (let i in this.file.file[child_name]["allOf"]) {
+          if (this.file.file[child_name]["allOf"][i]["properties"]) {
+            temp_child_obj = JSON.parse(JSON.stringify(this.file.file[child_name]["allOf"][i]["properties"]))
             if (child_obj["fromSuperClass"]) {
               Object.keys(temp_child_obj).forEach( key => {
                   // console.log("key in deepcopy superclass: " + key)
@@ -290,10 +414,10 @@ export default {
               })
             }
           } else {
-            superClass_lst.push(this.$store.state.schemaFile[child_name]["allOf"][i]["$ref"])
+            superClass_lst.push(this.file.file[child_name]["allOf"][i]["$ref"])
           }
         }
-        return {...temp_child_obj, ...miscUtilities.getSuperClassChildren(this.$store.state.schemaFile, superClass_lst, temp_child_obj)}
+        return {...temp_child_obj, ...miscUtilities.getSuperClassChildren(this.file.file, superClass_lst, temp_child_obj)}
       }
     },
     fromSuperClass(childNode) {
@@ -316,14 +440,113 @@ export default {
       } else {
         return false
       }
-    }
+    },
+    sortedObjects() {
+      // console.log('in sorted objects: ')
+      // console.log(this.children)
+      let obj_lst = []
+      let obj_lst_SC = []
+      let el_lst = []
+      let el_lst_SC = []
+      let superClass_lst = []
+      let subClass_obj = {}
+      let immutable_OB = ["Value", "Unit", "Decimals", "Precision", "TaxonomyElement"]
+      let nodeType = ''
+      let immutable_lst = []
+      let immutable_lst_SC = []
+      let fromSuperClass = false
+
+      if (this.name == 'WeatherDataRecord') {
+        console.log('in sorted obj (upload ob)')
+        console.log(this.children)
+      }
+
+      if (this.children) {
+          Object.keys(this.children).forEach(key => {
+            // console.log('key')
+            // console.log(key)
+            // console.log('~~~')
+            fromSuperClass = false
+            superClass_lst = []
+            if ('fromSuperClass' in this.children[key]) {
+              fromSuperClass = true
+            }
+            if (this.file.file[key]["type"] == "object") {
+                // console.log("object keys and obj")
+                // console.log(key)
+                // console.log(this.children[key])
+                // console.log("-----------")
+                nodeType = "Object"
+                // console.log('object')
+                // console.log('~~~')
+                if (fromSuperClass) {
+                  obj_lst_SC.push([key, this.file.file[key], fromSuperClass, nodeType])
+                } else {
+                  obj_lst.push([key, this.file.file[key], fromSuperClass, nodeType])
+                }
+            } else if (this.file.file[key]["allOf"]) {
+                // console.log('allOf')
+                // console.log('~~~')
+                for (let i in this.file.file[key]["allOf"]) {
+                    if (this.file.file[key]["allOf"][i]["$ref"]) {
+                        superClass_lst.push(this.file.file[key]["allOf"][i]["$ref"])
+                    } else {
+                        subClass_obj = this.file.file[key]["allOf"][i]
+                    }
+                }
+                nodeType = false
+                if (superClass_lst.includes('#/components/schemas/TaxonomyElement')) {
+                    nodeType = 'TaxonomyElement'
+                    if (fromSuperClass) {
+                      el_lst_SC.push([key, subClass_obj, fromSuperClass, nodeType, superClass_lst])  
+                    } else {
+                      el_lst.push([key, subClass_obj, fromSuperClass, nodeType, superClass_lst])  
+                    }
+                } else {
+                    nodeType = 'ObjWithInherit'
+                    if (fromSuperClass) {
+                      obj_lst_SC.push([key, subClass_obj, fromSuperClass, nodeType, superClass_lst])  
+                    } else {
+                      obj_lst.push([key, subClass_obj, fromSuperClass, nodeType, superClass_lst])
+                    }
+                }
+                
+            } else {
+              immutable_lst.push([key, this.file.file[key], fromSuperClass])
+            }
+          })
+
+          obj_lst.sort()
+          obj_lst_SC.sort()
+
+          el_lst.sort()
+          el_lst_SC.sort()
+
+          immutable_lst.sort()
+
+          // if (this.name == 'WeatherDataRecord') {
+          //   console.log('in sorted obj (upload ob)')
+          //   console.log(el_lst.concat(el_lst_SC).concat(obj_lst).concat(obj_lst_SC).concat(immutable_lst))
+          // }
+
+          return el_lst.concat(el_lst_SC).concat(obj_lst).concat(obj_lst_SC).concat(immutable_lst)
+      } 
+    },
+    getNodeDescription(nodeObj) {
+        return nodeObj["description"]
+    },
+    subClassChildren(file, superClassRef, subClassObj) {
+      return miscUtilities.getSuperClassChildren(file, superClassRef, subClassObj)
+    },
   },
   watch: {
     expandAllObjects() {
       if (this.expandAllObjects == true) {
         this.expandObject = true;
+        this.expandElement = true
       } else {
         this.expandObject = false;
+        this.expandElement = false
       }
     }
   }
@@ -337,6 +560,11 @@ export default {
 
 .icon-expandable {
   margin-bottom: 3px;
+}
+
+.taxonomy-element-icon-expandable {
+  margin-bottom: 3px;
+  padding: 6px;
 }
 
 .options {

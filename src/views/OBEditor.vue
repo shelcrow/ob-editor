@@ -1,97 +1,339 @@
 <template>
   <div class="ob-editor-container">
-    <div class="element-selector-header">
-        <b-form-file
-            v-model="file"
-            :state="Boolean(file)"
-            placeholder="Choose your OAS Definition File..."
-            drop-placeholder="Drop file here..."
-            v-if="!file"
-        ></b-form-file>
-        <span v-else>Selected file: <strong>{{ file ? file.name : '' }}</strong></span>
-    </div>
     <div class="element-selector-body" ref="treeContainer">
-        <!-- <div class="tree-search">
-            <b-form-input class="tree-search-bar" v-model="$store.state.treeSearchTerm" placeholder="Search across element names..."></b-form-input>
-        </div> -->
-        <b-tabs class="file-tabs">
-            <b-tab title="Solar Taxonomy" @click="changeTabState('XBRL')">
-                <span v-if="$store.state.xbrlFile" v-for="arr in sortedObjectsXBRL">
-                    <UploadOBTree
-                        :name="arr[0]"
-                        :depth="0"
-                        :expandAllObjects="expandAllObjects"
-                        :nodeDescription="arr[1]['description']"
-                        :ref="arr[0]"
-                        parent="xbrl"
-                        :type="arr[1]['type']"
-                        :nameRef="objectRef(arr[0], true)"
-                    >
-                    </UploadOBTree>
-                </span>
-                <span class="load-more-btn-container">
-                    <b-button variant="primary" @click="loadMore" v-if="showLoadMore">Load more</b-button>
-                </span>
-            </b-tab>
-            <b-tab title="Your OB OAS File" active @click="changeTabState('OAS')">
-                <div v-if="file" class="tabs-selector">
-                    <span
-                        v-if="$store.state.schemaFile"
-                        v-for="arr in sortedObjects"
-                    >
+        <div class="file-load-tabs">
+            <b-card no-body class="rounded-0" id="no-body-card">
+                <b-tabs v-model="$store.state.currentTabIndexFileEditor" card id="start-tabs">
+                    <template v-slot:tabs-end>
+                        <b-nav-item @click="showAddFileModal=true" href="#">
+                            <b>+</b>
+                        </b-nav-item>
+                    </template>
+                    <template v-slot:empty>
+                        <div class="text-center text-muted">
+                            There are no open files<br>
+                            Import a new file using the <b>+</b> button above.
+                        </div>
+                    </template>
+                    <!-- Render Tabs, supply a unique `key` to each tab -->
+                    <b-tab v-for="(item, index) in fileTabs" :key="'dyn-tab-' + index" :title="item.fileName">
+                        <template v-slot:title>
+                            <strong>{{item.fileName}}</strong>
+                            <!-- <span @click="closeTab(index)"> -->
+                            <span @click="$bvModal.show('modal-close-file-warning')">
+                                <v-icon
+                                    name="times"
+                                    id="tab-close"
+                                />
+                            </span>
+                        </template>
+                        <span v-if="item.file">
+                            <span v-for="arr in sortedObjects(item.file)">
 
-                        <!-- 
-                            Can check type without fxns because all top level object/elem have types.
-                            This first round of recursion only hits top levels
-                        -->
+                                <!-- obj node -->
+                                <UploadOBTree
+                                    v-if="arr[2] == 'Object'"
+                                    :name="arr[0]"
+                                    :children="arr[1].properties"
+                                    :depth="0"
+                                    :expandAllObjects="expandAllObjects"
+                                    :nodeDescription="arr[1].description"
+                                    :isObj="true"
+                                    parent="root"
+                                    type="object"
+                                    :ref="objectRef(arr[0], item.fileName)"
+                                    :nameRef="objectRef(arr[0], item.fileName)"
+                                    :file="item"
+                                    :isTaxonomyElement="false"
+                                ></UploadOBTree> 
 
-                        <UploadOBTree
-                            v-if="arr[1].type == 'object'"
-                            :name="arr[0]"
-                            :children="arr[1].properties"
-                            :depth="0"
-                            :expandAllObjects="expandAllObjects"
-                            :nodeDescription="arr[1].description"
-                            :isObj="true"
-                            parent="root"
-                            type="object"
-                            :ref="arr[0]"
-                            :nameRef="objectRef(arr[0], false)"
-                        ></UploadOBTree> 
-                        <UploadOBTree
-                            v-else-if="Array.isArray(arr[1])"
-                            :name="arr[0]"
-                            :children="subClassChildren(arr[1], arr[2])"
-                            :depth="0"
-                            :expandAllObjects="expandAllObjects"
-                            :nodeDescription="arr[2].description"
-                            :isObj="true"
-                            parent="root"
-                            type="object"
-                            :ref="arr[0]"
-                            :nameRef="objectRef(arr[0], false)"
-                        ></UploadOBTree>                 
-                        <UploadOBTree
-                            v-else
-                            :name="arr[0]"
-                            :depth="0"
-                            :expandAllObjects="expandAllObjects"
-                            :nodeDescription="arr[1].description"
-                            :ref="arr[0]"
-                            parent="root"
-                            type="element"
-                            :nameRef="objectRef(arr[0], false)"
-                        >
-                        </UploadOBTree>
-                    </span>
+                                <!-- taxonomy element -->
+                                <UploadOBTree
+                                    v-else-if="arr[2] == 'TaxonomyElement'"
+                                    :isObj="false"
+                                    :name="arr[0]"
+                                    :children="subClassChildren(item.file, arr[3], arr[1])"
+                                    :depth="0"
+                                    :expandAllObjects="expandAllObjects"
+                                    :nodeDescription="getNodeDescription(arr[1])"
+                                    parent="root"
+                                    type="object"
+                                    :ref="objectRef(arr[0], item.fileName)"
+                                    :nameRef="objectRef(arr[0], item.fileName)"
+                                    :file="item"
+                                    :isTaxonomyElement="true"
+                                >
+                                </UploadOBTree>
+
+                                <!-- allOf Obj -->
+                                <UploadOBTree
+                                    v-else-if="arr[2] == 'ObjWithInherit'"
+                                    :name="arr[0]"
+                                    :children="subClassChildren(item.file, arr[3], arr[1])"
+                                    :depth="0"
+                                    :expandAllObjects="expandAllObjects"
+                                    :nodeDescription="getNodeDescription(arr[1])"
+                                    :isObj="true"
+                                    parent="root"
+                                    type="object"
+                                    :ref="objectRef(arr[0], item.fileName)"
+                                    :nameRef="objectRef(arr[0], item.fileName)"
+                                    :file="item"
+                                    :isTaxonomyElement="false"
+                                ></UploadOBTree> 
+
+                                <UploadOBTree
+                                    v-else
+                                    :isObj="false"
+                                    :name="arr[0]"
+                                    :depth="0"
+                                    :expandAllObjects="expandAllObjects"
+                                    :nodeDescription="getNodeDescription(arr[1])"
+                                    parent="root"
+                                    type="string"
+                                    :ref="objectRef(arr[0], item.fileName)"
+                                    :nameRef="objectRef(arr[0], item.fileName)"
+                                    :file="item"
+                                    :isTaxonomyElement="false"
+                                >
+                                </UploadOBTree>
+
+                                <!-- ^^^^^ working ^^^^^^ -->
+
+                                <!-- taxElem fin -->
+                                <!-- <UploadOBTree
+                                    v-if="arr[2] == 'TaxonomyElement'"
+                                    :isObj="false"
+                                    :name="arr[0]"
+                                    :depth="0"
+                                    :expandAllObjects="expandAllObjects"
+                                    :nodeDescription="getNodeDescription(arr[1])"
+                                    parent="root"
+                                    type="element"
+                                    :ref="objectRef(arr[0], item.fileName)"
+                                    :nameRef="objectRef(arr[0], item.fileName)"
+                                    :file="item"
+                                    :isTaxonomyElement="true"
+                                >
+                                </UploadOBTree> -->
+                                <!-- fin -->
+
+                                <!-- <UploadOBTree
+                                    v-if="returnNodeType(arr[1]) == 'object'"
+                                    :name="arr[0]"
+                                    :children="arr[1].properties"
+                                    :depth="0"
+                                    :expandAllObjects="expandAllObjects"
+                                    :nodeDescription="arr[1].description"
+                                    :isObj="true"
+                                    parent="root"
+                                    type="object"
+                                    :ref="objectRef(arr[0], item.fileName)"
+                                    :nameRef="objectRef(arr[0], item.fileName)"
+                                    :file="item"
+                                ></UploadOBTree> 
+                                <span v-else>
+                                    <UploadOBTree
+                                        v-if="!arr[3]"
+                                        :name="arr[0]"
+                                        :children="subClassChildren(item.file, arr[1], arr[2])"
+                                        :depth="0"
+                                        :expandAllObjects="expandAllObjects"
+                                        :nodeDescription="arr[2].description"
+                                        :isObj="true"
+                                        parent="root"
+                                        type="object"
+                                        :ref="objectRef(arr[0], item.fileName)"
+                                        :nameRef="objectRef(arr[0], item.fileName)"
+                                        :file="item"
+                                    ></UploadOBTree>     
+                                    <UploadOBTree
+                                        v-else-if="arr[3]"
+                                        :isObj="false"
+                                        :name="arr[0]"
+                                        :depth="0"
+                                        :expandAllObjects="expandAllObjects"
+                                        :nodeDescription="arr[1].description"
+                                        parent="root"
+                                        type="element"
+                                        :ref="objectRef(arr[0], item.fileName)"
+                                        :nameRef="objectRef(arr[0], item.fileName)"
+                                        :file="item"
+                                    >
+                                    </UploadOBTree>      -->
+                                </span>
+                                <!-- If object w/ inheritance "AllOf" -->    
+                                <!-- <UploadOBTree
+                                    v-else
+                                    :name="arr[0]"
+                                    :depth="0"
+                                    :expandAllObjects="expandAllObjects"
+                                    :nodeDescription="arr[1].description"
+                                    parent="root"
+                                    type="element"
+                                    :ref="objectRef(arr[0], item.fileName)"
+                                    :nameRef="objectRef(arr[0], item.fileName)"
+                                    :file="item"
+                                >
+                                </UploadOBTree> -->
+                            </span>
+                        </span>
+                    </b-tab>
+                </b-tabs>
+            </b-card>
+            <div id="modal-container">
+            <b-modal id="modal-center" v-model="showAddFileModal">
+                <template v-slot:modal-header>
+                <div id="modal-header-">
+                    <h5 id="modal-header-inline"> Load Schema </h5>
+                    <v-icon
+                    name="info-circle"
+                    id="info-circle-"
+                    v-b-popover.hover.right="'Choose an OpenAPI schema file from your own system or load a master copy from the database. Default setting is read/write, checkbox read only if you want otherwise'"
+                    />
                 </div>
-                <div v-else>
-                    <p> Please select an Open API file from your system.</p>
-                </div>                
-            </b-tab>
-        </b-tabs>
+                </template>
+                <template v-slot:modal-footer>
+                    <div class="w-100">
+                        <b-button
+                            variant="primary"
+                            class="float-right"
+                            @click="loadFile"
+                            :disabled="!file"
+                            v-if="tabIndexFileUpload == 0"
+                        >
+                            Open
+                        </b-button>
+                        <b-button
+                            variant="primary"
+                            class="float-right"
+                            @click="createFile"
+                            v-if="tabIndexFileUpload == 1"
+                        >
+                            Create
+                        </b-button>
+                        <b-button
+                            variant="danger"
+                            class="float-right"
+                            @click="cancelLoadModal"
+                        >
+                            Cancel
+                        </b-button>
+                    </div>
+                </template>
+                <div id="modal-tabs-container">
+                <b-tabs content-class="mt-3" id="modal-tabs" no-fade v-model="tabIndexFileUpload">
+                    <div id="modal-tabs-inside">
+                        <b-tab title="From Local" active>
+                            <div class="tab-container">
+                            <div id="file-selector-container">
+                                <b-form-file
+                                    v-model="file"
+                                    :state="Boolean(file)"
+                                    placeholder="Choose your OpenAPI Schema File..."
+                                    v-if="!file"
+                                ></b-form-file>
+                                <span id="selected-file-txt" v-else>
+                                    Selected file: 
+                                    <strong>
+                                        {{ file ? file.name : '' }}
+                                    </strong>
+                                </span> 
+                                <br />
+                                <span id="readonly-checkbox" v-if="file">
+                                <b-form-checkbox
+                                    v-model="readOnly"
+                                    name="checkbox-1"
+                                    value="true"
+                                    unchecked-value="false"
+                                >
+                                    Read only
+                                </b-form-checkbox>
+                                </span> 
+                                <span id="unSelectFile-btn" v-if="file">
+                                <b-button @click="unSelectFile">
+                                    Unselect File
+                                </b-button>  
+                                </span>                
+                            </div>
+                            <div class="error-container">
+                                <b-alert id="file-duplicate-error" v-model="fileAlreadyOpened" variant="danger" dismissible>
+                                File already opened. Cannot open the same file twice.
+                                </b-alert>
+                            </div>
+                            </div>
+                        </b-tab>
+                        <b-tab title="Create New File">
+                            <div id="new-file-form">
+                                <b-form-group
+                                    id="new-file-input-group-1"
+                                    label="Definition file title:"
+                                    label-for="new-file-input-1"
+                                >
+                                    <b-form-input
+                                    id="new-file-input-1"
+                                    v-model="newFileForm.fileTitle"
+                                    placeholder="Enter title for your new definition file"
+                                    ></b-form-input>
+                                </b-form-group>
 
+                                <b-form-group 
+                                    id="new-file-input-group-2" 
+                                    label="Definition File Description:" 
+                                    label-for="new-file-input-2"
+                                >
+                                    <b-form-input
+                                    id="new-file-input-2"
+                                    v-model="newFileForm.fileDescription"
+                                    placeholder="Enter description for your new definition file"
+                                    ></b-form-input>
+                                </b-form-group>
 
+                                <b-form-group 
+                                    id="new-file-input-group-3" 
+                                    label="Definition Filename:" 
+                                    label-for="new-file-input-3"
+                                >
+                                    <b-form-input
+                                    id="new-file-input-3"
+                                    v-model="newFileForm.fileName"
+                                    placeholder="Enter filename for your new definition file."
+                                    ></b-form-input>
+                                </b-form-group>
+                            </div>
+                        </b-tab> 
+                        <!-- <b-tab title="From Remote">    
+                            <div class="database-selector-container">
+                            <div class="database-selector-list">
+                                <li v-for="(value, name, index) in dbList" id="db-in-list" @click="selectDBFile(index, name)" :class="{'selected-node': index == selectedIndex}">
+                                <span id="db-list-name">
+                                    {{ name }}
+                                </span>
+                                </li>
+                            </div>
+                            <div class="database-selector-list-information">
+                                <span v-if="selectedMasterFileInfo">
+                                <p> {{ selectedMasterFileInfo }} </p>
+                                </span>
+                                <span id="readonly-checkbox" v-if="selectedMasterFileName">
+                                <b-form-checkbox
+                                    v-model="readOnly"
+                                    name="checkbox-2"
+                                    value="true"
+                                    unchecked-value="false"
+                                >
+                                    Read only
+                                </b-form-checkbox>
+                                </span>
+                            </div>  
+                            </div>      
+                        </b-tab> -->
+                    </div>
+                </b-tabs>
+                </div>
+            </b-modal>
+            </div>
+        </div>        
     </div>
     <div class="element-selector-footer">
         <b-button variant="primary" size="sm" @click="toggleExpandAll">
@@ -111,7 +353,10 @@
             <h4 v-show="$store.state.showCreateDefinitionForm">Create Definition</h4>
         </div>
         <div class="download-button-container">
-            <b-button variant="primary" v-b-modal.export-modal @click="exportModalOpened">Export</b-button>
+            <b-button v-if="$store.state.currentFile" variant="primary" v-b-modal.export-modal @click="exportModalOpened">Export</b-button>
+            <span v-else v-b-popover.hover.bottom="'Load in file to export'">
+                <b-button variant="primary" disabled>Export</b-button>
+            </span>
         </div>
         </div>
         <div class="element-editor-body">
@@ -126,6 +371,23 @@
 
         <!-- Modals -->
         <ExportFormModal />
+        <span id="modal-container">
+            <b-modal id="modal-close-file-warning">
+                <template v-slot:modal-title>
+                    Close File?
+                </template>
+                <template v-slot:modal-footer>
+                    <div class="w-100">
+                        <b-button class="float-right" variant="primary" @click="closeTabWarning()">OK</b-button>
+                        <b-button class="float-right" @click="$bvModal.hide('modal-close-file-warning')">Cancel</b-button>
+                    </div>
+                </template>
+                <template v-slot:default>
+                    Are you sure you want to close the file? Any changes not exported will not be saved. 
+                </template>
+
+            </b-modal>            
+        </span>
   </div>
 </template>
 
@@ -139,7 +401,8 @@ import CreateDefinitionForm from "../components/forms/CreateDefinitionForm.vue"
 import ExportFormModal from "../components/forms/ExportFormModal"
 import EditDefinition from "../components/EditDefinition/EditDefinition"
 import * as miscUtilities from "../utils/miscUtilities"
-
+import XBRLFile from "../assets/xbrl_all_elements.json"
+import * as JSONEditor from '../utils/JSONEditor.js'
 
 
 export default {
@@ -153,11 +416,31 @@ export default {
             allNodesFlat: [],
             numOfElem: 50,
             showLoadMore: true,
-            filteredCount: 0
+            filteredCount: 0,
+            tabs: [],
+            tabCounter: 0,
+            showAddFileModal: false,
+            file: null,
+            tabIndexFileUpload: null,
+            tabIndexEditorView: null,
+            readOnly: false,
+            selectedIndex: null,
+            selectedMasterFileName: null,
+            selectedMasterFileInfo: null,
+            dbList: {
+                "Solar Taxonomy 2019-09-20": {
+                    information: "This is the latest release of the Orange Button Solar Taxonomy",
+                    fileName: "xbrl_all_elements.json"
+                }
+            },
+            fileAlreadyOpened: false,
+            currentTabIndex: null,
+            newFileForm: {
+                fileTitle: "",
+                fileDescription: "",
+                fileName: ""
+            }
         };
-    },
-    created() {
-        this.$store.commit("updateFlatXBRLNodes")
     },
     methods: {
         fileToJSON() {
@@ -173,6 +456,56 @@ export default {
                 }
             }
         },
+        createFile() {
+            let defnFileTitle = this.newFileForm.fileTitle;
+            let defnFileDescription = this.newFileForm.fileDescription;
+            let defnFileName = this.newFileForm.fileName;
+
+            let check_duplicate_file = false
+
+            if (!defnFileTitle) {
+                defnFileTitle = 'Placeholder Title'
+            }
+
+            if (!defnFileDescription) {
+                defnFileDescription = 'Placeholder Description'
+            }
+
+            if (!defnFileDescription) {
+                defnFileName = 'OB-OpenAPI-DefnFile.json'
+            }
+
+            let newFileObj = JSONEditor.createNewDefnFile(defnFileTitle, defnFileDescription, defnFileName)
+
+            for (let i in this.$store.state.fileTabs) {
+                // console.log('tab obj: ')
+                // console.log(i)
+                // console.log('tab file name: ' + i.fileName)
+                // console.log('file obj file name: ' + file_obj.fileName)
+                if (this.$store.state.fileTabs[i].fileName == newFileObj.fileName) {
+                    check_duplicate_file = true
+                }
+            }
+
+            if (check_duplicate_file) {
+                this.fileAlreadyOpened = true 
+            } else {
+                // console.log(file_obj)
+                this.$store.state.fileTabs.push(newFileObj)
+                this.showAddFileModal = false
+            }
+
+
+            // this.$store.commit({
+            //     type: "createNewFile",
+            //     newFileTitle: defnFileTitle,
+            //     newFileDescription: defnFileDescription,
+            //     newFileFileName: defnFileName
+            // })
+        },
+        returnNodeType(nodeObj) {
+            console.log(nodeObj["type"])
+        },
         fromSuperClass(childNode) {
         // console.log(childNode["$ref"])
         // console.log(childNode)
@@ -187,72 +520,24 @@ export default {
             this.$store.commit("exportFile")
         },
         showCreateDefinitionForm() {
-                this.$store.commit("selectNone")
-
+            this.$store.commit("selectNone")
             this.$store.commit("showCreateDefinitionForm")
             this.$store.commit("refreshCreateDefnInputs", true)
         },
         toggleExpandAll() {
             this.expandAllObjects = !this.expandAllObjects
         },
-        objectRef(nodeName, isXBRL) {
-            if (isXBRL) {
-                return 'xbrl-' + nodeName
-            } else {
-                return "root-" + nodeName
-            }
+        objectRef(nodeName, fileName) {
+            // console.log('nodeName: ' + nodeName)
+            // console.log('fileName: ' + fileName)
+            return fileName + '-' + nodeName + "-root";
         },
         exportModalOpened() {
             this.$store.commit("toggleExportModal")
         },
         // returns object containing all children of the superClass and subClass with no duplicates, while labeling objects/elements that are inherited for signifying
-        subClassChildren(superClassRef, subClassObj) {
-            // let superClassChildren = {}
-            // let superClassName = ""
-            // let temp_super_children = {}
-            // miscUtilities.getSuperClassChildren(this.$store.state.schemaFile, superClassRef, subClassObj)
-
-            // for (let i in superClassRef) {
-            //     superClassName = superClassRef[i].slice(superClassRef[i].lastIndexOf("/") + 1)
-            //     if (this.$store.state.schemaFile[superClassName]["allOf"]) {
-            //         // might cause bug here if not using a deep copy
-            //         // need to get both inherited objects and elements
-            //         for (let i in this.$store.state.schemaFile[superClassName]["allOf"]) {
-            //             temp_super_children = {}
-            //             if (this.$store.state.schemaFile[superClassName]["allOf"][i]["properties"]) {
-            //                 temp_super_children = JSON.parse(JSON.stringify(this.$store.state.schemaFile[superClassName]["allOf"][i]["properties"]))
-            //                 Object.keys(temp_super_children).forEach( key => {
-            //                     // console.log("key in deepcopy superclass: " + key)
-            //                     temp_super_children[key].fromSuperClass = true
-            //                 })
-            //             } else {
-            //                 // only way to do show children of a superclasses' superclass is to recursively build it.
-            //                 // if a superclasses' superclass has a superclass then recursion is the only way to build it.
-            //                 // for now superclassing is "simple"
-            //                 // create a miscutility recursive function to build out chain of inherited children
-            //                 // let superClassInheritedSuperClass = this.$store.state.schemaFile[superClassName]["allOf"][i].slice(this.$store.state.schemaFile[superClassName]["allOf"][i].lastIndexOf("/") + 1)
-            //             }
-
-            //             superClassChildren = {...superClassChildren, ...temp_super_children}
-            //         }
-            //     } else {
-            //         let deepSuperClassObj = JSON.parse(JSON.stringify(this.$store.state.schemaFile[superClassName]["properties"]))
-            //         Object.keys(deepSuperClassObj).forEach( key => {
-            //             // console.log("key in deepcopy superclass: " + key)
-            //             deepSuperClassObj[key].fromSuperClass = true
-            //         })
-            //         // console.log(deepSuperClassObj)
-            //         superClassChildren = {...superClassChildren, ...deepSuperClassObj}
-            //     }
-            // }
-            // //   console.log({...subClassObj["properties"], ...superClassChildren})
-            //     // console.log({...subClassObj["properties"], ...superClassChildren})
-            //     // console.log(superClassChildren)
-            // let test_obj = {...subClassObj["properties"], ...superClassChildren}
-            // // console.log('obeditor, subclasschildren: ')
-            // console.log(test_obj)
-            // return {...subClassObj["properties"], ...superClassChildren}
-            return miscUtilities.getSuperClassChildren(this.$store.state.schemaFile, superClassRef, subClassObj)
+        subClassChildren(file, superClassRef, subClassObj) {
+            return miscUtilities.getSuperClassChildren(file, superClassRef, subClassObj)
         },
 
       // keep track of what tab you're in to show the right detailed view
@@ -266,124 +551,246 @@ export default {
 
             }
         },
-            loadMore() {
-                this.numOfElem += 50;
-                if (this.numOfElem >= this.filteredCount) {
-                    this.showLoadMore = false
+        loadMore() {
+            this.numOfElem += 50;
+            if (this.numOfElem >= this.filteredCount) {
+                this.showLoadMore = false
+            }
+        },
+        // newTab() {
+        //   this.tabs.push(this.tabCounter++)
+        // },
+        selectDBFile(index, name) {
+            this.selectedIndex = index
+            if (name == 'Solar Taxonomy 2019-09-20') {
+                this.file = XBRLFile
+            }
+        },
+        unSelectFile() {
+            this.file = null;
+        },
+        loadFile() {
+            let file_obj = { 
+            fileName: this.file.name
+            }
+
+            let reader = new FileReader();
+            let check_duplicate_file = false
+
+            reader.readAsText(this.file);
+            reader.onload = () => {
+                file_obj["fullFileForExport"] = JSON.parse(reader.result)
+                file_obj["file"] = file_obj["fullFileForExport"].components.schemas
+                for (let i in this.$store.state.fileTabs) {
+                    // console.log('tab obj: ')
+                    // console.log(i)
+                    // console.log('tab file name: ' + i.fileName)
+                    // console.log('file obj file name: ' + file_obj.fileName)
+                    if (this.$store.state.fileTabs[i].fileName == file_obj.fileName) {
+                        check_duplicate_file = true
+                    }
+                }
+
+                if (check_duplicate_file) {
+                    this.fileAlreadyOpened = true 
+                } else {
+                    // console.log(file_obj)
+                    this.$store.state.fileTabs.push(file_obj)
+                    this.showAddFileModal = false
                 }
             }
+        },
+        cancelLoadModal() {
+            this.showAddFileModal = false
+        },
+        sortedObjects(file) {
+            // console.log('sorted obj: ')
+            // console.log(file)
+
+            let obj_lst = []
+            let el_lst = []
+            let immutable_lst = []
+            let superClass_lst = []
+            let subClass_obj = {}
+            let immutable_OB = ["Value", "Unit", "Decimals", "Precision", "TaxonomyElement"]
+            let nodeType = ''
+
+            if (file) {
+                Object.keys(file).forEach(key => {
+                    superClass_lst = []
+                    if (file[key]["type"] == "object") {
+                        // console.log('key')
+                        // console.log(key)
+                        // console.log('~~~')
+                        // console.log("object keys and obj")
+                        // console.log(key)
+                        // console.log(file[key])
+                        // console.log("-----------")
+                        nodeType = "Object"
+                        obj_lst.push([key, file[key], nodeType])
+                    } else if (file[key]["allOf"]) {
+                        for (let i in file[key]["allOf"]) {
+                            if (file[key]["allOf"][i]["$ref"]) {
+                                superClass_lst.push(file[key]["allOf"][i]["$ref"])
+                            } else {
+                                subClass_obj = file[key]["allOf"][i]
+                            }
+                        }
+                        nodeType = false
+                        if (superClass_lst.includes('#/components/schemas/TaxonomyElement')) {
+                            nodeType = 'TaxonomyElement'
+                            el_lst.push([key, subClass_obj, nodeType, superClass_lst])  
+                        } else {
+                            nodeType = 'ObjWithInherit'
+                            obj_lst.push([key, subClass_obj, nodeType, superClass_lst])  
+                        }
+                    } else {
+                        immutable_lst.push([key, file[key]])
+                    }
+                })
+
+                obj_lst.sort()
+                el_lst.sort()
+                immutable_lst.sort()
+                return obj_lst.concat(el_lst).concat(immutable_lst)
+            } 
+        },
+        closeTabWarning() {
+            this.closeTab(this.$store.state.currentTabIndexFileEditor)
+            this.$bvModal.hide('modal-close-file-warning')
+        },
+        closeTab(x) {
+            this.$store.state.fileTabs.splice(x, 1)
+        },
+        getNodeDescription(nodeObj) {
+            return nodeObj["description"]
+        }
   },
   watch: {
-      file() {
-          this.fileToJSON();
-      },
-      // jump to definition node if you want to edit the non-definition node
-      // do i need to keep the if statement to differentiate between objects and elements?
-      "$store.state.selectDefinitionNode"() {
-          let yCoord = 0
-          if (this.$store.state.selectDefinitionNode == true && this.$store.state.nodeType != "object") {
-                this.$store.state.nameRef = "root-" + this.$store.state.nodeName;
-                // xbrl tab is [0], oboas tab is [1]
-                // if element is in both xbrl and oboas, then there will be 2 components in the ref. array
-                // we want to use [1] in that case because we only edit on that tab.
-                if (this.$refs[this.$store.state.isSelected].length == 2) {
-                    yCoord = this.$refs[this.$store.state.isSelected][1].$el.offsetTop
-                } else {
-                    yCoord = this.$refs[this.$store.state.isSelected][0].$el.offsetTop
-                }
-                // console.log(yCoord)
-                // console.log(this.$refs)
-                // console.log(yCoord)
-                this.$refs.treeContainer.scrollTop = yCoord - 200
-                this.$store.commit("toggleSelectDefinitionNode")
-          } else if (this.$store.state.selectDefinitionNode == true && this.$store.state.nodeType == "object") {
-                this.$store.state.nameRef = "root-" + this.$store.state.nodeName;
-                if (this.$refs[this.$store.state.isSelected].length == 2) {
-                    yCoord = this.$refs[this.$store.state.isSelected][1].$el.offsetTop
-                } else {
-                    yCoord = this.$refs[this.$store.state.isSelected][0].$el.offsetTop
-                }
-                this.$refs.treeContainer.scrollTop = yCoord - 200
-                this.$store.commit("toggleSelectDefinitionNode")
-          }
-          this.$store.state.nodeParent = "root"
-      },
+        tabIndexFileUpload() {
+            console.log(this.tabIndexFileUpload)
+        },
+        "$store.state.currentTabIndexFileEditor"() {
+            // console.log('current tab: ' + this.$store.state.currentTabIndexFileEditor);
 
-      // watch to see if tab changes, then reset search term
-      "$store.state.inXBRLTab"() {
-          this.numOfElem = 50
-          this.$store.state.treeSearchTerm = ''
-          this.$store.state.showDetailedView = false
-          this.$store.state.nameRef = ''
-          this.$store.state.showEditNodeView = false;
-          this.$store.state.showCreateDefinitionForm = false;
-      },
-      sortedObjectsXBRL() {
-        //   console.log("num of elm: " + this.numOfElem)
-        //   console.log("filtered count: " + this.filteredCount)
-          if (this.numOfElem >= this.filteredCount) {
-            //   console.log("set showLoadMOre to False")
-              this.showLoadMore = false
-          }
-      },
-      "$store.state.treeSearchTerm"() {
-        if (this.numOfElem >= this.filteredCount) {
-            // console.log("set showLoadMOre to False")
-            this.showLoadMore = false
-        } else {
-            this.showLoadMore = true
+            // watch tab changes and change to the active file being worked with
+            this.$store.state.currentFile = this.$store.state.fileTabs[this.$store.state.currentTabIndexFileEditor]
+            // console.log('currentFile, watcher in obeditor: ')
+            // console.log(this.$store.state.currentFile.file)
+
+            // on tab change reset the detailed views, and reset the defintion that is selected
+            // should refactor this into a function that is like "reset view"
+            this.$store.state.showDetailedView = false
+            this.$store.state.showEditNodeView = false
+            this.$store.state.showCreateDefinitionForm = false
+
+            this.$store.state.isSelected = null
+            this.$store.state.nameRef = null
+
+            // console.log('current file: ' + this.$store.state.fileTabs[this.$store.state.currentTabIndexFileEditor].fileName)
+            // console.log(this.$store.state.currentFile)
+        },
+        file() {
+            this.fileToJSON();
+        },
+        // jump to definition node if you want to edit the non-definition node
+        // do i need to keep the if statement to differentiate between objects and elements?
+        "$store.state.selectDefinitionNode"() {
+            // console.log(this.$refs)
+            let yCoord = 0
+            // console.log(this.$store.state.nameRef.slice(this.$store.state.nameRef.length -5, this.$store.state.nameRef.length))
+            // if ends in root, don't scroll 
+            if (this.$store.state.selectDefinitionNode == true && 
+                    this.$store.state.nameRef.slice(this.$store.state.nameRef.length -5, this.$store.state.nameRef.length) != "-root") {
+
+                if (this.$store.state.selectDefinitionNode == true && this.$store.state.nodeType != "object") {
+                    // console.log('checking ref: ' + this.$store.state.nameRef)
+                    yCoord = this.$refs[this.$store.state.nameRef + '-root'][0].$el.offsetTop
+                    // console.log('yCoord: ' + yCoord)
+
+                    // this.$store.state.nameRef = "root-" + this.$store.state.nodeName;
+                    // xbrl tab is [0], oboas tab is [1]
+                    // if element is in both xbrl and oboas, then there will be 2 components in the ref. array
+                    // we want to use [1] in that case because we only edit on that tab.
+                    // if (this.$refs[this.$store.state.currentFile.fileName].length == 2) {
+                    //     yCoord = this.$refs[this.$store.state.currentFile.fileName].$el.offsetTop
+                    // } else {
+                    //     yCoord = this.$refs[this.$store.state.currentFile.fileName].$el.offsetTop
+                    // }
+                    // console.log(yCoord)
+                    // console.log(this.$refs)
+                    // console.log(yCoord)
+                    this.$refs.treeContainer.scrollTop = yCoord - 200
+                    this.$store.commit("toggleSelectDefinitionNode")
+                    this.$store.state.nameRef = this.$store.state.nameRef + '-root'
+                } else if (this.$store.state.selectDefinitionNode == true && this.$store.state.nodeType == "object") {
+                    // console.log('2')
+                    // console.log('checking ref: ')
+                    // console.log(this.$refs[this.$store.state.nameRef])
+                    yCoord = this.$refs[this.$store.state.nameRef + '-root'][0].$el.offsetTop
+
+                    // this.$store.state.nameRef = "root-" + this.$store.state.nodeName;
+                    // if (this.$refs[this.$store.state.currentFile.fileName].length == 2) {
+                    //     yCoord = this.$refs[this.$store.state.currentFile.fileName].$el.offsetTop
+                    // } else {
+                    //     yCoord = this.$refs[this.$store.state.currentFile.fileName].$el.offsetTop
+                    // }
+                    this.$refs.treeContainer.scrollTop = yCoord - 200
+                    this.$store.state.nameRef = this.$store.state.nameRef + '-root'
+                    this.$store.commit("toggleSelectDefinitionNode")
+                }
+                // console.log('setting node parent to root')
+                this.$store.state.nodeParent = "root"
+            }
+        },
+
+        // watch to see if tab changes, then reset search term
+        "$store.state.inXBRLTab"() {
+            this.numOfElem = 50
+            this.$store.state.treeSearchTerm = ''
+            this.$store.state.showDetailedView = false
+            this.$store.state.nameRef = ''
+            this.$store.state.showEditNodeView = false;
+            this.$store.state.showCreateDefinitionForm = false;
+        },
+        "$store.state.treeSearchTerm"() {
+            if (this.numOfElem >= this.filteredCount) {
+                // console.log("set showLoadMOre to False")
+                this.showLoadMore = false
+            } else {
+                this.showLoadMore = true
+            }
+            this.numOfElem = 50
+        },
+        showAddFileModal() {
+            this.file = null
+            this.fileAlreadyOpened = false
+        },
+        tabIndex() {
+            this.readOnly = false
+            this.file = null
+            this.selectedIndex = null
+            this.selectedMasterFileInfo = null
+            this.selectedMasterFileName = null
+        },
+        readOnly() {
+            // console.log(this.readOnly)
+        },
+        file() {
+            if (this.file) {
+            // console.log(this.file.name) 
+            } else {
+            // console.log(this.file)
+            }
+        },
+        selectedIndex() {
+            this.readOnly = false
         }
-          this.numOfElem = 50
-      }
   },
   computed: {
-      // sort objects into two sections (objects, then elements) and alphabetize
-      sortedObjects() {
-          let obj_lst = []
-          let el_lst = []
-          let superClass_lst = []
-          let subClass_obj = {}
-
-          if (this.$store.state.schemaFile) {
-            Object.keys(this.$store.state.schemaFile).forEach(key => {
-                superClass_lst = []
-                if (this.$store.state.schemaFile[key]["type"] == "object") {
-                    obj_lst.push([key, this.$store.state.schemaFile[key]])
-                } else if (this.$store.state.schemaFile[key]["allOf"]) {
-                    for (let i in this.$store.state.schemaFile[key]["allOf"]) {
-                        if (this.$store.state.schemaFile[key]["allOf"][i]["$ref"]) {
-                            superClass_lst.push(this.$store.state.schemaFile[key]["allOf"][i]["$ref"])
-                        } else {
-                            subClass_obj = this.$store.state.schemaFile[key]["allOf"][i]
-                        }
-                    }
-                    obj_lst.push([key, superClass_lst, subClass_obj])
-                } else {
-                    el_lst.push([key, this.$store.state.schemaFile[key]])
-                }
-            })
-
-            obj_lst.sort()
-            el_lst.sort()
-
-            return obj_lst.concat(el_lst)
-          } 
-      },
-        sortedObjectsXBRL() {
-                let startArr = []
-                let retArr = []
-                if (this.$store.state.xbrlFile) {
-                    for (let obj in this.$store.state.xbrlFile) {
-                        startArr.push([obj, this.$store.state.xbrlFile[obj]])
-                        //   console.log(this.$store.state.xbrlFile[obj]["description"])
-                    }
-                }
-                retArr = startArr.sort().filter( node => {
-                    return node[0].toLowerCase().includes(this.$store.state.treeSearchTerm.toLowerCase())
-                })
-                this.filteredCount = retArr.length;
-                // console.log(this.filteredCount)
-                return retArr.slice(0, this.numOfElem)
+        fileTabs() {
+            // console.log('filetabs computed')
+            return this.$store.state.fileTabs
         }
     }
 
@@ -396,28 +803,22 @@ export default {
   height: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 50px 1fr 50px;
+  grid-template-rows: 54px 1fr 50px;
   background-color: #f7f7f7
-}
-
-.element-selector-header {
-    grid-column: 1 / 2;
-    grid-row: 1 /2 ;
-    border: #d3d3d3 solid 1px;
-    padding-left: 15px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding-right: 15px;
 }
 
 .element-selector-body {
     grid-column: 1 / 2;
-    grid-row:  2 /3 ;
+    grid-row:  1 / span 2 ;
     border: #d3d3d3 solid 1px;
     overflow-y: auto;
-    overflow-x: scroll;
+    overflow-x: auto;
     display: grid;
+    background-color: white;
+}
+
+.enable-scroll {
+
 }
 
 .element-selector-footer {
@@ -433,7 +834,10 @@ export default {
 .element-editor-header {
     grid-column: 2 / 3;
     grid-row: 1 / 2 ;
-    border: #d3d3d3 solid 1px;
+    border-top: #d3d3d3 solid 1px;
+    border-right: #d3d3d3 solid 1px;
+    border-left: #d3d3d3 solid 1px;
+
     padding-left: 15px;
     display: grid;
     grid-template-columns: 1fr 1fr
@@ -504,6 +908,137 @@ export default {
     width: 100%;
     display: flex;
     justify-content: center;
+}
+
+.modal-tabs-container {
+}
+
+#modal-center___BV_modal_body_ {
+  padding: 0px;
+}
+
+#modal-center___BV_modal_header_ {
+  border-bottom: none;
+}
+
+#modal-tabs-inside {
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-bottom: 10px;
+  height: 300px;
+}
+
+#modal-header- {
+}
+
+#modal-header-inline {
+  display: inline-block;
+}
+
+#info-circle- {
+  margin-left: 6px;
+  margin-bottom: 5px;
+  height: 18px;
+  width: 18px;
+
+}
+
+.was-validated .custom-file-input:invalid ~ .custom-file-label, .custom-file-input.is-invalid ~ .custom-file-label {
+  border-color: #dee2e6 !important;
+}
+
+#selected-file-txt {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#readonly-checkbox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.database-selector-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.database-selector-list {
+  grid-column: 1 / 2;
+  border: 1px solid black;
+  margin: 10px;
+  margin-top: 0px;
+  height: 280px;
+}
+
+.database-selector-list-information {
+  grid-column: 2 / 3;
+}
+
+#db-in-list {
+    list-style: none;
+    border-bottom: 1px solid black;
+}
+
+#db-in-list {
+  padding-left: 5px;
+}
+
+#file-duplicate-error {
+  margin-top:0px;
+}
+
+.alert {
+  margin-bottom: 0px !important;
+}
+
+.tab-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+
+}
+
+.tab-pane {
+  height: 100%;
+}
+
+#unSelectFile-btn {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;}
+
+.card-header {
+    border-radius: 0px !important;
+}
+
+#no-body-card {
+    border: none;
+}
+
+#tab-close {
+    margin-bottom: 1px;
+    margin-left: 6px;
+    border-radius: 50%;
+    height: 18px;
+    width: 18px;
+    padding: 2px;
+}
+
+#tab-close:hover {
+    background-color: #dbdbdc;
+}
+
+.card-body {
+    padding: 0px !important;
+    padding-top: 5px !important;
+}
+
+#new-file-form {
+    padding: 5px 25px 10px 25px;
 }
 
 </style>

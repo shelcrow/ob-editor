@@ -5,9 +5,10 @@ Component for adding members to objects
 <template>
     <div class="node-selector-container">
         <div class="source-checkboxes">
-            <b-form-group label="Pick which list to select from:">
-                <b-form-radio v-model="selectedElemLst" name="solar-taxonomy-radios" value="solar-taxonomy">Solar Taxonomy</b-form-radio>
-                <b-form-radio v-model="selectedElemLst" name="OBOAS-radios" value="OBOAS">Your OB OAS File</b-form-radio>
+            <b-form-group label="Pick which loaded file to select from:">
+                <span v-for="openFile in $store.state.fileTabs" :key="'member-list-item' + openFile.fileName">
+                    <b-form-radio v-model="selectedFileName" name="OBOAS-radios" :value="openFile.fileName"> {{ openFile.fileName }}</b-form-radio>
+                </span>
             </b-form-group>
         </div>
         <b-form-group 
@@ -18,13 +19,8 @@ Component for adding members to objects
             <b-form-input v-model="searchTerm" placeholder="Search for definition..."></b-form-input>
         </b-form-group>
         <p>Members:</p>
-        <div class="solar-taxonomy-node-list" v-if="selectedElemLst == 'solar-taxonomy'">
-            <li v-for="(definition, index) in filteredList" class="node-in-list" @click="memberToAdd(index, definition)" :class="{'selected-node': index == selectedIndex}">
-                {{ definition }}
-            </li>
-        </div>
-        <div class="OBOAS-node-list" v-if="selectedElemLst == 'OBOAS'">
-            <li v-for="(definition, index) in filteredList" class="node-in-list" @click="memberToAdd(index, definition)" :class="{'selected-node': index == selectedIndex}">
+        <div class="file-elements-list">
+            <li v-for="(definition, index) in filteredList" class="element-in-list" @click="memberToAdd(index, definition)" :class="{'selected-node': index == selectedIndex}">
                 {{ definition }}
             </li>
         </div>
@@ -43,7 +39,7 @@ Component for adding members to objects
             </span>
         </div>
         <div class="submit-button-container">
-            <b-button variant="primary" @click="submitAddMember">
+            <b-button variant="primary" @click="submitAddMember" :disabled="selectedIndex == null">
                 <span v-if="!hasSubmitted">Add</span>
                 <span v-else>Add another</span>
             </b-button>
@@ -60,7 +56,7 @@ export default {
             searchTerm: '',
             selectedIndex: null,
             selectedElementDetails: null,
-            selectedElemLst: "OBOAS",
+            selectedFileName: null,
             definitionToAdd: '',
             memberType: '',
             memberDescrip: '',
@@ -76,17 +72,23 @@ export default {
             this.memberName = definitionName
             this.showErrorInfinite = false
             this.showErrorConflict = false
+            let inheritanceObjPropObj = null
 
-            if (this.selectedElemLst == "OBOAS") {
-                if (this.$store.state.schemaFile[definitionName]["allOf"]) {
-                    this.memberType = "object"
+            if (miscUtilities.hasInheritance(this.$store.state.currentFile.file[definitionName])) {
+                console.log('addmember1')
+
+                if (miscUtilities.isTaxonomyElement(this.$store.state.currentFile.file, definitionName)) {
+                    inheritanceObjPropObj = miscUtilities.getPropertiesObj(this.$store.state.currentFile.file[definitionName], "TaxonomyElement")
+                    this.memberType = inheritanceObjPropObj.type
+                    this.memberDescrip = inheritanceObjPropObj.description
                 } else {
-                    this.memberType = this.$store.state.schemaFile[definitionName]["type"]
+                    inheritanceObjPropObj = miscUtilities.getPropertiesObj(this.$store.state.currentFile.file[definitionName], "ObjWithInherit")
+                    this.memberType = inheritanceObjPropObj.type
+                    this.memberDescrip = inheritanceObjPropObj.description
                 }
-                this.memberDescrip = this.$store.state.schemaFile[definitionName]["description"]
-            } else if (this.selectedElemLst == "solar-taxonomy") {
-                this.memberType = "string"
-                this.memberDescrip = this.$store.state.xbrlFile[definitionName]["description"]
+            } else {
+                this.memberType = this.$store.state.currentFile.file[definitionName]["type"]
+                this.memberDescrip = this.$store.state.currentFile.file[definitionName]["description"]
             }
 
             if (!this.memberDescrip) {
@@ -104,11 +106,11 @@ export default {
             this.selectedElementDetails = arr
         },
         submitAddMember() {
-            if (miscUtilities.checkInfiniteLoopErr(this.$store.state.schemaFile, this.$store.state.isSelected, this.memberName)) {
+            if (miscUtilities.checkInfiniteLoopErr(this.$store.state.currentFile.file, this.$store.state.isSelected, this.memberName)) {
                 this.showErrorInfinite = true
             } 
 
-            if (miscUtilities.checkSuperClassObjConflict(this.$store.state.schemaFile, this.$store.state.isSelected, this.memberName)) {
+            if (miscUtilities.checkSuperClassObjConflict(this.$store.state.currentFile.file, this.$store.state.isSelected, this.memberName)) {
                 this.showErrorConflict = true
             }
 
@@ -118,7 +120,7 @@ export default {
                     defnName: this.$store.state.isSelected,
                     memberName: this.memberName,
                     memberType: this.memberType,
-                    elemList: this.selectedElemLst
+                    elemList: this.selectedFileName
                 })
                 this.hasSubmitted = true
             }
@@ -126,13 +128,23 @@ export default {
     },
     computed: {
         filteredList() {
-            if (this.selectedElemLst == "OBOAS") {
-                return this.$store.state.allNodesFlat.filter( node => {
-                    if ( node.toLowerCase() != this.$store.state.isSelected.toLowerCase() ) {
-                        return node.toLowerCase().includes(this.searchTerm.toLowerCase())
-                }}).sort()
-            } else {
-                return this.$store.state.xbrlFlat.filter( node => {
+            let selectedFileObj = ''
+            if (this.selectedFileName) {
+                // console.log('selected file name: ')
+                // console.log(this.selectedFileName)
+
+                for (let i in this.$store.state.fileTabs) {
+                    if (this.$store.state.fileTabs[i].fileName == this.selectedFileName) {
+                        selectedFileObj = this.$store.state.fileTabs[i].file
+                    }
+                }
+                // console.log('selectedFileObj: ')
+                // console.log(selectedFileObj)
+                let allNodesFlat = miscUtilities.getAllElementsFlat(selectedFileObj)
+                // console.log('allNodesFlat: ')
+                // console.log(allNodesFlat)
+
+                return allNodesFlat.filter( node => {
                     if ( node.toLowerCase() != this.$store.state.isSelected.toLowerCase() ) {
                         return node.toLowerCase().includes(this.searchTerm.toLowerCase())
                 }}).sort()
@@ -150,7 +162,8 @@ export default {
         }
     },
     watch: {
-        selectedElemLst() {
+        selectedFileName() {
+            console.log(this.selectedFile)
             this.selectedIndex = null;
             this.searchTerm = ''
         }
@@ -159,7 +172,7 @@ export default {
 </script>
 
 <style>
-.OBOAS-node-list {
+.file-elements-list {
     height: 250px;
     overflow-y: auto;
     background-color: white;
@@ -170,15 +183,7 @@ export default {
 
 }
 
-.solar-taxonomy-node-list {
-    height: 250px;
-    overflow-y: auto;
-    background-color: white;
-    border: 1px solid black;
-    margin-bottom: 4px;
-}
-
-.node-in-list {
+.element-in-list {
     list-style: none;
     border-bottom: 1px solid black;
 }

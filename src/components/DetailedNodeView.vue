@@ -77,18 +77,20 @@ export default {
             if (this.$store.state.isSubClassedNode) {
                 this.showError = true
             } else {
+                this.$store.commit('clearEditorView')
                 this.$store.commit({
                     type: "deleteNode",
                     nodeName: nodeName,
-                    OASFile: this.$store.state.schemaFile,
+                    currentFile: this.$store.state.currentFile.file,
                     parent: this.$store.state.nodeParent,
                     nodeType: this.$store.state.nodeType,
                 })
                 this.$store.commit("selectNone")
             }
-
         },
         showEditNodeView() {
+            // console.log('detailed node view: ')
+            // console.log(this.$store.state.nodeParent)
             this.$store.commit("showEditNodeView")
         },
         cancelDetailedView() {
@@ -99,58 +101,6 @@ export default {
         "$store.state.isSelected"() {
             this.showError = false
         }
-        // "$store.state.isSelected"() {
-            //     this.defnName = this.$store.state.isSelected
-            //     console.log(this.defnName)
-            // if (this.$store.state.isSelected) {
-            //     let temp_doc = this.$store.state.nodeDescription;
-            //     let temp_superClassList = []
-            //     let temp_superClassListStr = ''
-            //     let temp_ret_obj = {}
-
-            //     if (this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"]) {
-            //         for (let i in this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"]) {
-            //             if (this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"][i]["$ref"]) {
-            //                 temp_superClassList.push(this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"][i]["$ref"].slice(this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"][i]["$ref"].lastIndexOf("/") + 1))
-            //             }
-            //         }
-            //     }
-
-            //     if (temp_superClassList.length == 0) {
-            //         temp_superClassListStr = 'None'
-            //     } else {
-            //         temp_superClassListStr = temp_superClassList.join(", ")
-            //     }
-
-            //     if (!temp_doc) {
-            //         temp_doc = "Documentation not available"
-            //     }
-
-            //     if (this.$store.state.schemaFile[this.$store.state.isSelected]["type"] == "object" || this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"]) {
-            //         temp_ret_obj = {
-            //             "Name": this.$store.state.nodeName,
-            //             "Type": this.$store.state.nodeDataType,
-            //             "Documentation": temp_doc,
-            //             "Superclasses": temp_superClassListStr
-            //         }
-            //     } else {
-            //         temp_ret_obj = {
-            //             "Name": this.$store.state.nodeName,
-            //             "Type": this.$store.state.nodeDataType,
-            //             "Documentation": temp_doc,
-            //         }
-            //     }
-
-
-
-            //     let arr = []
-            //     arr.push(temp_ret_obj)
-            //     this.nodeDetails = arr
-            // } else {
-            //     this.nodeDetails = false
-            // }
-
-        // }
     },
     computed: {
         deleteWarning() {
@@ -189,68 +139,50 @@ export default {
                 temp_enum = temp_enum.join(', ')
             }
 
-            if (this.$store.state.inOASTab) {
-                if (this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"]) {
-                    for (let i in this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"]) {
-                        if (this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"][i]["$ref"]) {
-                            temp_superClassList.push(this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"][i]["$ref"].slice(this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"][i]["$ref"].lastIndexOf("/") + 1))
-                        }
+            if (this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"]) {
+                for (let i in this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"]) {
+                    if (this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"][i]["$ref"]) {
+                        
+                        temp_superClassList.push(this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"][i]["$ref"]
+                            .slice(this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"][i]["$ref"].lastIndexOf("/") + 1))
                     }
                 }
-                
-                if (temp_superClassList.length == 0) {
-                    temp_superClassListStr = 'None'
-                } else {
-                    temp_superClassListStr = temp_superClassList.join(", ")
-                }
-                
-                // console.log('detailed node view: ' + this.$store.state.nodeEnum)
-
-                
-                if (this.$store.state.schemaFile[this.$store.state.isSelected]["type"] == "object" || this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"]) {
-                    temp_ret_obj = {
-                        "Name": this.$store.state.nodeName,
-                        "Type": this.$store.state.nodeDataType,
-                        "Documentation": temp_doc,
-                        "Superclasses": temp_superClassListStr
-                    }
-                } else {
-                    temp_ret_obj = {
-                        "Name": this.$store.state.nodeName,
-                        "Type": this.$store.state.nodeDataType,
-                        "Enumeration": temp_enum,
-                        "Documentation": temp_doc,
-                    }
-                }
+            }
+            
+            if (temp_superClassList.length == 0) {
+                temp_superClassListStr = 'None'
             } else {
-                if (this.$store.state.xbrlFile[this.$store.state.isSelected]["allOf"]) {
-                    for (let i in this.$store.state.xbrlFile[this.$store.state.isSelected]["allOf"]) {
-                        if (this.$store.state.xbrlFile[this.$store.state.isSelected]["allOf"][i]["$ref"]) {
-                            temp_superClassList.push(this.$store.state.xbrlFile[this.$store.state.isSelected]["allOf"][i]["$ref"].slice(this.$store.state.xbrlFile[this.$store.state.isSelected]["allOf"][i]["$ref"].lastIndexOf("/") + 1))
-                        }
-                    }
+                temp_superClassListStr = temp_superClassList.join(", ")
+            }
+            
+            // console.log('detailed node view: ' + this.$store.state.nodeEnum)
+
+            
+            if ((this.$store.state.currentFile.file[this.$store.state.isSelected]["type"] == "object" 
+                || this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"]) 
+                && !this.$store.state.isTaxonomyElement) {
+
+                temp_ret_obj = {
+                    "Name": this.$store.state.nodeName,
+                    "Type": this.$store.state.nodeType,
+                    "Documentation": temp_doc,
+                    "Superclasses": temp_superClassListStr
                 }
 
-                if (temp_superClassList.length == 0) {
-                    temp_superClassListStr = 'None'
-                } else {
-                    temp_superClassListStr = temp_superClassList.join(", ")
-                }
-
-                
-                if (this.$store.state.xbrlFile[this.$store.state.isSelected]["type"] == "object" || this.$store.state.xbrlFile[this.$store.state.isSelected]["allOf"]) {
-                    temp_ret_obj = {
-                        "Name": this.$store.state.nodeName,
-                        "Type": this.$store.state.nodeDataType,
-                        "Documentation": temp_doc,
-                        "Superclasses": temp_superClassListStr
-                    }
-                } else {
-                    temp_ret_obj = {
-                        "Name": this.$store.state.nodeName,
-                        "Type": this.$store.state.nodeDataType,
-                        "Documentation": temp_doc,
-                    }
+            } else if (this.$store.state.isTaxonomyElement) {
+                temp_ret_obj = {
+                    "Name": this.$store.state.nodeName,
+                    "Type": this.$store.state.nodeType,
+                    "Enumeration": temp_enum,
+                    "Documentation": temp_doc,
+                    "Superclasses": temp_superClassListStr
+                }                
+            } else {
+                temp_ret_obj = {
+                    "Name": this.$store.state.nodeName,
+                    "Type": this.$store.state.nodeType,
+                    "Enumeration": temp_enum,
+                    "Documentation": temp_doc,
                 }
             }
             

@@ -20,8 +20,8 @@ export function isDefnObj(JSONFile, defnName) {
 }
 
 // returns if it currently has inheritance
-export function hasInheritance(JSONFile, definitionName) {
-    if (JSONFile[definitionName]["allOf"]) {
+export function hasInheritance(defnObj) {
+    if (defnObj["allOf"]) {
         return true
     } else {
         return false
@@ -37,6 +37,22 @@ export function canInherit(JSONFile, definitionName) {
     }
 }
 
+export function getPropertiesObj(objWithInheritance, objType) {
+    if (objType == 'TaxonomyElement') {
+        for (let i in objWithInheritance["allOf"]) {
+            if (objWithInheritance["allOf"][i]["type"]) {
+                return objWithInheritance["allOf"][i]
+            }
+        }
+    } else if (objType == 'ObjWithInherit') {
+        for (let i in objWithInheritance["allOf"]) {
+            if (objWithInheritance["allOf"][i]["properties"]) {
+                return objWithInheritance["allOf"][i]
+            }
+        }
+    }
+}
+
 // returns an array of all superclasses of the definition
 export function getSuperClasses(JSONFile, definitionName) {
 	
@@ -45,6 +61,7 @@ export function getSuperClasses(JSONFile, definitionName) {
 //builds the array of inherited and inherited inheritence recursively
 //implements transitive inheritance and returns as an object
 export function getSuperClassChildren(JSONFile, superClassRefArr, subClassObj) {
+    // console.log('in get super class children')
     let superClassChildren = {}
     let superClassName = ""
     let temp_super_children = {}
@@ -98,6 +115,7 @@ export function getSuperClassChildren(JSONFile, superClassRefArr, subClassObj) {
     // console.log(subClassObj)
     // console.log("final obj?:")
     // console.log(test_obj)
+    // console.log({...subClassObj["properties"], ...superClassChildren})
     // console.log({...subClassObj["properties"], ...superClassChildren})
     return {...subClassObj["properties"], ...superClassChildren}    
 }
@@ -275,4 +293,43 @@ export function getTopLevelObjects(JSONFile, defnName) {
     }
 
     return topLevelObjs
+}
+
+// takes a file and returns all the top level elements and objects; used for the addMember functionality
+export function getAllElementsFlat(file) {
+    // console.log('getAllNodesFlat in miscUtiltiies: ')
+    // console.log(file)
+    let allElementsFlat = []
+    Object.keys(file).forEach( key => {
+        // console.log(key)
+        allElementsFlat.push(key)
+    }) 
+    return allElementsFlat
+}
+
+// take a file and returns all the top level objects; used for the superclass list in AddInheritance
+export function getAllObjectsFlat(file) {
+
+    let allObjectsFlat = []
+    Object.keys(file).forEach( key => {
+        if (!isTaxonomyElement(file, key)) {
+            if (isDefnObj(file, key)) {
+                allObjectsFlat.push(key)
+            }
+        }
+    })
+    return allObjectsFlat
+}
+
+export function isTaxonomyElement(file, defnName) {
+    let retBool = false
+    if (file[defnName]["allOf"]) {
+        for (let i in file[defnName]["allOf"]) {
+            if (file[defnName]["allOf"][i]["$ref"] == "#/components/schemas/TaxonomyElement") {
+                retBool = true
+            }
+        }   
+    }
+
+    return retBool
 }

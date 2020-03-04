@@ -72,6 +72,7 @@
                 </b-form-group>
             </b-form>
             <!-- <p>*Required</p> -->
+            <p v-if="$store.state.currentFile"> You have <strong>{{ $store.state.currentFile.fileName }}</strong> selected, this is the file that will be exported </p>
             <p>**Will save as .json</p>
         </b-modal>
     </div>
@@ -114,6 +115,8 @@ export default {
                     "version": "Version placeholder"
                 }
             }
+            console.log('exportobj exportformodal: ')
+            console.log(exportObj)
             this.$store.commit(exportObj)
         },
         exportModalOpened() {

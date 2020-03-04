@@ -467,6 +467,23 @@
           }
         }
       },
+      "TaxonomyElement": {
+        "type": "object",
+        "properties": {
+          "Value": {
+            "$ref": "#/components/schemas/Value"
+          },
+          "Unit": {
+            "$ref": "#/components/schemas/Unit"
+          },
+          "Decimals": {
+            "$ref": "#/components/schemas/Decimals"
+          },
+          "Precision": {
+            "$ref": "#/components/schemas/Precision"
+          }
+        }
+      },
       "ProductCode": {
         "type": "string",
         "description": "A product code is a standardized, unique human-readable identifier that is compact,and can be easily parsed. It consists of an entity code concatenated to a product specific identification string, separated by a hyphen. A product string is up to 16 characters, comprised of upper case letters, number, and hyphens (‘-‘).\nThe format of a product code is:\n[EntityCode]-[ProductString], e.g., UEE-E2000-3-XFM for company Universal Energy Enterprises with Entity Code UEE and Product String of E2000-3-XFM."
@@ -882,6 +899,22 @@
       "TrackerPosition": {
         "type": "string",
         "description": "Position of a tracker. Tracker position is described as a rotation where 0 degrees indicates the tracking surface is horizontal and facing the sky. Negative rotation is eastward for a north-south tracker axis."
+      },
+      "Value": {
+        "type": "string",
+        "description": "Value for the instance element"
+      },
+      "Unit": {
+        "type": "string",
+        "description": "Unit of the instance element"
+      },
+      "Decimals": {
+        "type": "string",
+        "description": "Decimals of the instance element"
+      },
+      "Precision": {
+        "type": "string",
+        "description": "Precision of the instance element"
       }
     }
   }

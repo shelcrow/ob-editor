@@ -7,6 +7,7 @@ JSONEditor.js contains functions related to manipulating OAS JSON files
 import Vue from "vue";
 import Vuex from "vuex";
 import * as miscUtilities from "./miscUtilities.js"
+import newFileTemplate from "../assets/OB-OpenAPI-New-File-Template.json"
 
 
 // Deletes all nodes recursively of the same node name
@@ -17,21 +18,35 @@ export function deleteAllNodes(JSONFile, nodeName) {
         if (key == nodeName) {
             Vue.delete(JSONFile, key)
         } else if (JSONFile[key].properties) {
-            Vue.delete(JSONFile[key].properties, nodeName)
+            if (JSONFile[key]["properties"][nodeName]) {
+                Vue.delete(JSONFile[key].properties, nodeName)
+            }
         } else if (JSONFile[key]["allOf"]) {
             for (let i in JSONFile[key]["allOf"]) {
                 if (JSONFile[key]["allOf"][i]["properties"]) {
-                    Vue.delete(JSONFile[key]["allOf"][i]["properties"], nodeName)
+                    if (JSONFile[key]["allOf"][i]["properties"][nodeName]) {
+                        Vue.delete(JSONFile[key]["allOf"][i]["properties"], nodeName)
+                    }
+                }
+                if (JSONFile[key]["allOf"][i]["$ref"]) {
+                    let superClassName = JSONFile[key]["allOf"][i]["$ref"].slice(
+                        JSONFile[key]["allOf"][i]["$ref"].lastIndexOf('/') + 1,
+                        JSONFile[key]["allOf"][i]["$ref"].length)
+                    if (superClassName == nodeName) {
+                        Vue.delete(JSONFile[key]["allOf"], i)
+                    }
                 }
             }
         }
     })
+    console.log('del nodes fin')
 }
 
 //Remove single node from object. Removes every instance of the node which is in the object
 export function deleteNode(JSONFile, nodeName, parentName) {
-    console.log('node name: ' + nodeName)
-    console.log('parent name: ' + parentName)
+    // console.log('node name: ' + nodeName)
+    // console.log('parent name: ' + parentName)
+    console.log('2')
 
     if (parentName == 'root') {
         Vue.delete(JSONFile, nodeName)
@@ -59,11 +74,16 @@ export function deleteNode(JSONFile, nodeName, parentName) {
             }
         }
     } else {
+        console.log('del node 1')
+        console.log('parent name: ' + parentName + '\nnodeName: ' + nodeName)
+        console.log(JSONFile[parentName])
         if (JSONFile[parentName]["properties"]) {
-            console.log("non-allOf")
+            // console.log("non-allOf")
             Vue.delete(JSONFile[parentName]["properties"], nodeName)
         } else {
-            console.log("allOf")
+            console.log("allOf (in del node")
+            console.log('parent name: ' + parentName)
+            console.log('nodeName: ' + nodeName)
             for (let i in JSONFile[parentName]["allOf"]) {
                 if (JSONFile[parentName]["allOf"][i]["properties"]) {
                     Vue.delete(JSONFile[parentName]["allOf"][i]["properties"], nodeName)
@@ -105,23 +125,22 @@ export function deleteNode(JSONFile, nodeName, parentName) {
 }
 
 //Edit node
-export function editNode(JSONFile, nodeName, newType, newDocumentation) {
+export function editNode(JSONFile, nodeName, newDescription) {
+    console.log('in editNode json editor')
     let nodeEdit = {
-            "type": newType,
-            "description": newDocumentation,
+            "description": newDescription,
     }
-    if (miscUtilities.hasInheritance(JSONFile, nodeName)) {
+    if (miscUtilities.hasInheritance(JSONFile[nodeName])) {
         for (let i in JSONFile[nodeName]["allOf"]) {
             if (JSONFile[nodeName]["allOf"][i]["type"]) {
-                nodeEdit.properties = JSONFile[nodeName]["allOf"][i]["properties"]
-                JSONFile[nodeName]["allOf"].splice(i, 1)
-                JSONFile[nodeName]["allOf"].push(nodeEdit)
-                // Vue.delete(JSONFile[nodeName]["allOf"][i])
-                // Vue.set(JSONFile[nodeName]["allOf"][i], nodeName, nodeEdit)
+
+                JSONFile[nodeName]["allOf"][i]["description"] = newDescription
+
             }
         }
     } else if (JSONFile[nodeName]["type"] == "object") {
         nodeEdit.properties = JSONFile[nodeName]["properties"]
+        nodeEdit.type = "object"
         Vue.set(JSONFile, nodeName, nodeEdit)
     } else {
         Vue.set(JSONFile, nodeName, nodeEdit)
@@ -192,9 +211,9 @@ export function addChildToObject(JSONFile, parentName, childName, nodeType, chil
                 Vue.set(JSONFile[parentName]["allOf"][i]["properties"], childName, childObj)
             }
         }
+    } else {
+        Vue.set(JSONFile[parentName].properties, childName, childObj)
     }
-
-    Vue.set(JSONFile[parentName].properties, childName, childObj)
 
 }
 
@@ -257,12 +276,22 @@ export function addEnum(JSONFile, defnName, enumName) {
     let temp_enum = {}
     // console.log(JSONFile[defnName])
     // console.log(JSONFile[defnName]["enum"])
-    if (JSONFile[defnName]["enum"]) {
-        JSONFile[defnName]["enum"].push(enumName)
-    } else {
-        temp_enum = [enumName]
-        Vue.set(JSONFile[defnName], "enum", temp_enum)
-    }
+    for (let i in JSONFile[defnName]["allOf"]) {
+        if (JSONFile[defnName]["allOf"][i]["type"]) {
+            if (JSONFile[defnName]["allOf"][i]["enum"]) {
+                JSONFile[defnName]["allOf"][i]["enum"].push(enumName)
+            } else {
+                temp_enum = [enumName]
+                Vue.set(JSONFile[defnName]["allOf"][i], "enum", temp_enum)
+            }
+        }
+      }   
+
+    // if (JSONFile[defnName]["enum"]) {
+    // } else {
+    //     temp_enum = [enumName]
+    //     Vue.set(JSONFile[defnName], "enum", temp_enum)
+    // }
     // console.log(JSONFile[defnName]["enum"])
     // console.log(JSONFile[defnName])
 }
@@ -270,11 +299,43 @@ export function addEnum(JSONFile, defnName, enumName) {
 
 // remove enumeration from definition element
 export function removeEnum(JSONFile, defnName, enumName) {
-    console.log("remove enum: " + enumName)
-    let enum_index = JSONFile[defnName]["enum"].indexOf(enumName)
-    if (JSONFile[defnName]["enum"].length == 1) {
-        Vue.delete(JSONFile[defnName], "enum")
-    } else {
-        Vue.delete(JSONFile[defnName]["enum"], enum_index)
-    }
+    // console.log("remove enum: " + enumName)
+    for (let i in JSONFile[defnName]["allOf"]) {
+        if (JSONFile[defnName]["allOf"][i]["enum"]) {
+            let enum_index = JSONFile[defnName]["allOf"][i]["enum"].indexOf(enumName)
+            if (JSONFile[defnName]["allOf"][i]["enum"].length == 1) {
+                console.log('json editor, removeEnum, 1:')
+                Vue.delete(JSONFile[defnName]["allOf"][i], "enum")
+            } else {
+                console.log('json editor, removeEnum, 2:')
+                console.log('enum index: ' + enum_index)
+                console.log('enum obj')
+                console.log(JSONFile[defnName]["allOf"][i])
+                console.log(JSONFile[defnName]["allOf"][i]["enum"])
+
+                Vue.delete(JSONFile[defnName]["allOf"][i]["enum"], enum_index)
+            }
+            // if (JSONFile[defnName]["allOf"][i]["enum"]) {
+            //     JSONFile[defnName]["allOf"][i]["enum"].push(enumName)
+            // } else {
+            //     temp_enum = [enumName]
+            //     Vue.set(JSONFile[defnName]["allOf"][i], "enum", temp_enum)
+            // }
+        }
+    }   
+}
+
+export function createNewDefnFile(title, description, fileName) {
+    // console.log('title: ' + title + '\ndescription: ' + description + '\nfilename: ' + filename)
+
+    let returnNewFileObj = {}
+    returnNewFileObj["fullFileForExport"] = newFileTemplate
+    returnNewFileObj["file"] = returnNewFileObj["fullFileForExport"].components.schemas
+    returnNewFileObj["fileName"] = fileName
+
+    returnNewFileObj["fullFileForExport"]["info"]["title"] = title
+    returnNewFileObj["fullFileForExport"]["info"]["description"] = description
+
+    return returnNewFileObj
+
 }

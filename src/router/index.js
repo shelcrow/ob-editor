@@ -1,6 +1,7 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
 import OBEditor from "../views/OBEditor.vue";
+import DevSandbox from "../views/DevSandbox.vue"
 
 Vue.use(VueRouter);
 
@@ -13,6 +14,11 @@ const routes = [
     path: "/ob-editor",
     name: "ob-editor",
     component: OBEditor
+  },
+  {
+    path: "/dev-sandbox",
+    name: "dev-sandbox",
+    component: DevSandbox
   }
 ];
 

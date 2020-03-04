@@ -44,9 +44,6 @@ Component for adding inheritance to objects
 import * as miscUtilities from "../../utils/miscUtilities"
 
 export default {
-    created() {
-        this.$store.commit("updateFlatObjNodes")
-    },
     data() {
         return {
             searchTerm: '',
@@ -55,7 +52,7 @@ export default {
             superClassName: '',
             showErrorInfinite: false,
             showErrorConflict: false,
-            hasSubmitted: true
+            hasSubmitted: false
         }
     },
     methods: {
@@ -68,11 +65,11 @@ export default {
             let elemType = ''
             let elemDescrip = ''
 
-            if (this.$store.state.schemaFile[definitionName]["allOf"]) {
+            if (this.$store.state.currentFile.file[definitionName]["allOf"]) {
                 elemType = 'object'
             } else {
-                elemType = this.$store.state.schemaFile[definitionName]["type"]
-                elemDescrip = this.$store.state.schemaFile[definitionName]["description"]
+                elemType = this.$store.state.currentFile.file[definitionName]["type"]
+                elemDescrip = this.$store.state.currentFile.file[definitionName]["description"]
             }
 
             if (!elemDescrip) {
@@ -92,19 +89,19 @@ export default {
         submitAddSuperClass() {
             // check if it causes an infinite heritance loop
             //this works
-            // if (miscUtilities.checkInfiniteLoopErr(this.$store.state.schemaFile, this.$store.state.isSelected, this.superClassName)) {
+            // if (miscUtilities.checkInfiniteLoopErr(this.$store.state.currentFile.file, this.$store.state.isSelected, this.superClassName)) {
             //     this.showError = true
             // } else {
             //     this.$store.commit("addSuperClass", this.superClassName)
             // }
             // this.$store.commit("addSuperClass", this.superClassName)
-            // console.log(miscUtilities.getAllObjInDefn(this.$store.state.schemaFile, this.$store.state.isSelected))
-            // console.log(miscUtilities.getAllSuperClassesInDefn(this.$store.state.schemaFile, this.$store.state.isSelected))
-            if (miscUtilities.checkInfiniteLoopErr(this.$store.state.schemaFile, this.$store.state.isSelected, this.superClassName)) {
+            // console.log(miscUtilities.getAllObjInDefn(this.$store.state.currentFile.file, this.$store.state.isSelected))
+            // console.log(miscUtilities.getAllSuperClassesInDefn(this.$store.state.currentFile.file, this.$store.state.isSelected))
+            if (miscUtilities.checkInfiniteLoopErr(this.$store.state.currentFile.file, this.$store.state.isSelected, this.superClassName)) {
                 this.showErrorInfinite = true
             } 
 
-            if (miscUtilities.checkSuperClassObjConflict(this.$store.state.schemaFile, this.$store.state.isSelected, this.superClassName)) {
+            if (miscUtilities.checkSuperClassObjConflict(this.$store.state.currentFile.file, this.$store.state.isSelected, this.superClassName)) {
                 this.showErrorConflict = true
             }
 
@@ -116,12 +113,15 @@ export default {
     },
     computed: {
         filteredList() {
-            if (this.$store.state.isSelected) {
-                return this.$store.state.allObjNodesFlat.filter( node => {
+            if (this.$store.state.currentFile) {
+                // console.log('in add inheritance filtered list')
+
+                let allNodesFlat = miscUtilities.getAllObjectsFlat(this.$store.state.currentFile.file)
+
+                return allNodesFlat.filter( node => {
                     if ( node.toLowerCase() != this.$store.state.isSelected.toLowerCase() ) {
                         return node.toLowerCase().includes(this.searchTerm.toLowerCase())
-                    }
-                }).sort()
+                }}).sort()
             }
         }
     }
@@ -133,7 +133,10 @@ export default {
     height: 250px;
     overflow-y: auto;
     background-color: white;
-    border: 1px solid black;
+    border-top: 1px solid black;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+
     margin-bottom: 4px;
 
 }

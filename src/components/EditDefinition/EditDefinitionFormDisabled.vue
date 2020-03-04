@@ -17,7 +17,7 @@ Child of EditDefinition, edit definition form disabled
                 label="Definition OAS type:"
                 label-for="node-type-input"
             >
-                <b-form-input id="edit-node-type-input" v-model="$store.state.nodeDataType" :options="dataTypes" disabled></b-form-input>
+                <b-form-input id="edit-node-type-input" v-model="$store.state.nodeType" :options="dataTypes" disabled></b-form-input>
             </b-form-group>
             <b-form-group
                 id="edit-node-enum-input-group"

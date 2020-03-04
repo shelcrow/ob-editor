@@ -22,7 +22,7 @@ Component for removing inheritance from objects
         </div>
         <br />
         <div class="submit-button-container">
-            <b-button variant="primary" @click="removeSuperClass">
+            <b-button variant="primary" @click="removeSuperClass" :disabled="emptySuperClassList">
                 Remove
             </b-button>
         </div>
@@ -36,7 +36,9 @@ export default {
             searchTerm: '',
             selectedIndex: null,
             selectedSuperClass: '',
-            definitionsInSuperClass: []
+            definitionsInSuperClass: [],
+            selectedElementDetails: [],
+            emptySuperClassList: true
         }
     },
     methods: {
@@ -47,11 +49,11 @@ export default {
             let elemType = ''
             let elemDescrip = ''
 
-            if (this.$store.state.schemaFile[superClassName]["allOf"]) {
+            if (this.$store.state.currentFile.file[superClassName]["allOf"]) {
                 elemType = 'object'
             } else {
-                elemType = this.$store.state.schemaFile[superClassName]["type"]
-                elemDescrip = this.$store.state.schemaFile[superClassName]["description"]
+                elemType = this.$store.state.currentFile.file[superClassName]["type"]
+                elemDescrip = this.$store.state.currentFile.file[superClassName]["description"]
             }
 
             if (!elemDescrip) {
@@ -77,14 +79,21 @@ export default {
         superClassList() {
             let superClassList = []
             if (this.$store.state.isSelected) {
-                for (let i in this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"]) {
-                    if (this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"][i]["$ref"]) {
+                for (let i in this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"]) {
+                    if (this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"][i]["$ref"]) {
                         superClassList.push(
-                            this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"][i]["$ref"]
-                                .slice(this.$store.state.schemaFile[this.$store.state.isSelected]["allOf"][i]["$ref"]
+                            this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"][i]["$ref"]
+                                .slice(this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"][i]["$ref"]
                                     .lastIndexOf("/") + 1))
                     }
                 }
+
+                if (superClassList.length == 0) {
+                    this.emptySuperClassList = true
+                } else {
+                    this.emptySuperClassList = false
+                }
+                
                 return superClassList.sort()
             }
         }

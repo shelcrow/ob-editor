@@ -15,9 +15,6 @@ Component for adding enumeration to definitions
             <b-button variant="primary" @click="submitAddEnum">
                 Add
             </b-button>
-            <b-button variant="danger" @click="clearSubmitAddEnumInput">
-                Clear
-            </b-button>
         </div>
     </div>
 </template>
@@ -36,9 +33,6 @@ export default {
         },
         submitAddEnum() {
             this.$store.commit("addEnumToObject", this.enumToAdd)
-            this.enumToAdd = ''
-        },
-        clearSubmitAddEnumInput() {
             this.enumToAdd = ''
         }
     },
@@ -66,6 +60,7 @@ export default {
 .enum-in-enum-list {
     list-style: none;
     border-bottom: 1px solid black;
+    padding-left: 5px;
 }
 
 .enum-list {

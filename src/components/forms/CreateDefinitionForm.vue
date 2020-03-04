@@ -3,10 +3,10 @@
         <b-form>
             <b-form-group
                 id="node-type-input-group"
-                label="Definition type:"
+                label="OB Definition type:"
                 label-for="node-type-input"
             >
-                <b-form-select id="node-type-input" v-model="definitionType" :options="dataTypes" :disabled="!preSubmit"></b-form-select>
+                <b-form-select id="node-type-input" v-model="definitionType" :options="OBDataTypes" :disabled="!preSubmit"></b-form-select>
             </b-form-group>
             <b-form-group
                 id="node-name-input-group"
@@ -42,7 +42,8 @@ export default {
             definitionType: null,
             definitionDescription: null,
             preSubmit: true,
-            dataTypes: ['string', 'number', 'integer', 'boolean', 'array', 'object']
+            dataTypes: ['string', 'number', 'integer', 'boolean', 'array', 'object'],
+            OBDataTypes: ['OB Taxonomy Element', 'OB Object']
 
         }
     },
