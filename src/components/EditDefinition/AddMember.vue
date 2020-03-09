@@ -104,13 +104,15 @@ export default {
             this.selectedElementDetails = arr
         },
         submitAddMember() {
-            if (miscUtilities.checkInfiniteLoopErr(this.$store.state.schemaFile, this.$store.state.isSelected, this.memberName)) {
-                this.showErrorInfinite = true
-            } 
+            if (this.selectedElemLst != "solar-taxonomy") {
+                if (miscUtilities.checkInfiniteLoopErr(this.$store.state.schemaFile, this.$store.state.isSelected, this.memberName)) {
+                    this.showErrorInfinite = true
+                } 
 
-            if (miscUtilities.checkSuperClassObjConflict(this.$store.state.schemaFile, this.$store.state.isSelected, this.memberName)) {
-                this.showErrorConflict = true
-            }
+                if (miscUtilities.checkSuperClassObjConflict(this.$store.state.schemaFile, this.$store.state.isSelected, this.memberName)) {
+                    this.showErrorConflict = true
+                }
+            } 
 
             if (!this.showErrorInfinite && !this.showErrorConflict) {
                 this.$store.commit({

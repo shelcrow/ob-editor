@@ -106,6 +106,7 @@ export function getSuperClassChildren(JSONFile, superClassRefArr, subClassObj) {
 // returns bool. true for can inherit, false for cant inherit
 // a subclass cannot inherit from a superclass that has the subclass as an object member or as a superclass, or has the subclass in one of the object members or their superclasses
 export function checkInfiniteLoopErr(JSONFile, subClassName, superClassName) {
+    console.log('in checkinf loop')
     let allSuperClasses = getAllSuperClassesInDefn(JSONFile, superClassName)
     let allObjs = getAllObjInDefn(JSONFile, superClassName)
     let combinedObjsSuperClasses = allSuperClasses.concat(allObjs)
@@ -140,7 +141,7 @@ export function checkInfiniteLoopErr(JSONFile, subClassName, superClassName) {
 // input: json file, name of defn as string
 // output: arr of defn (objects) strings
 export function getAllSuperClassesInDefn(JSONFile, superClassName) {
-    // console.log("in get all superclasses")
+    console.log("in get all superclasses")
     let allSuperClassRefs = []
     let hasSuperClass = false
 
@@ -217,6 +218,7 @@ export function getAllObjInDefn(JSONFile, defnName) {
 // How to check for conflicts when adding a superclass or object to the defnObj:
 // - does the defnObj have a superclass 
 export function checkSuperClassObjConflict(JSONFile, defnName, superClassOrObjectNameToAdd) {
+    console.log('check supr class obj')
     let defnTopLevelConflicts = getAllSuperClassesInDefn(JSONFile, defnName) 
     for (let i in defnTopLevelConflicts) {
         defnTopLevelConflicts = defnTopLevelConflicts.concat(getTopLevelObjects(JSONFile, defnTopLevelConflicts[i]))
