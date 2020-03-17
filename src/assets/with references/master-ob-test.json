@@ -1,0 +1,31 @@
+{
+  "openapi" : "3.0.0",
+  "info" : {
+    "version" : "1.0.0",
+    "title" : "OB Open API System Health",
+    "description" : "OB Open API Definitions for the Solar Taxonomy System Health Monitoring and Power Performance Test use cases."
+  },
+  "paths" : {},
+  "servers": [],
+  "components" : {
+    "schemas" : {
+      "Product" : {
+        "type" : "object",
+        "properties" : {
+          "ProductName" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ProductName"
+          },
+          "ProductIdentifier" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ProductIdentifier"
+          },
+          "ProductManufacturer" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ProductManufacturer"
+          },
+          "ProductType" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ProductType"
+          }
+        }
+      }
+    }
+  }
+}

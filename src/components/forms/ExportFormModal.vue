@@ -115,8 +115,8 @@ export default {
                     "version": "Version placeholder"
                 }
             }
-            console.log('exportobj exportformodal: ')
-            console.log(exportObj)
+            // console.log('exportobj exportformodal: ')
+            // console.log(exportObj)
             this.$store.commit(exportObj)
         },
         exportModalOpened() {

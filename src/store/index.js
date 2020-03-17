@@ -25,6 +25,7 @@ export default new Vuex.Store({
     listOfDefinitionElements: [],
     selectDefinitionNode: false,
     showCreateDefinitionForm: false,
+    showLoadInDefinitionForm: false,
     nodeToAddToObject: '',
     nodeToAddListType: '',
     superClassToRemoveFromObject: '',
@@ -51,8 +52,17 @@ export default new Vuex.Store({
     //taxonomy element update
     isTaxonomyElement: false,
 
+    // get rid of master Files. just have loadedFiles, which will include master files you can't delete
+
+    masterFiles: {},
+    loadedFiles: {},
+    selectedFileName: '',
+    selectedDefnRefFile: null,
+
+    defnIsLocal: null,
+
+    activeEditingView: 'EditDefinitionFormDisabled'
   },
-  
   mutations: {
     /* 
       Add enumeration to object
@@ -92,14 +102,22 @@ export default new Vuex.Store({
       Add member to object
     */
     addNodeToObject(state, payload) {
-      let memberObj = {}
-      memberObj["$ref"] = "#/components/schemas/" + payload.memberName
-      // console.log(payload.memberName)
-      // console.log(memberObj)
-      // console.log(payload)
-      console.log('addNodeToObject, store: ')
-      console.log(payload)
-      JSONEditor.addChildToObject(state.currentFile.file, payload.defnName, payload.memberName, payload.memberType, memberObj)
+      // let memberObj = {}
+      // memberObj["$ref"] = "#/components/schemas/" + payload.memberName
+      // // console.log(payload.memberName)
+      // // console.log(memberObj)
+      // // console.log(payload)
+      // // console.log('addNodeToObject, store: ')
+      // // console.log(payload)
+
+      let parentDefnName = payload.parentName
+      let childDefnName = payload.defnToAddName
+      let childRefFile = state.loadedFiles[payload.referenceFileName]
+      let workingFile = state.currentFile
+
+
+
+      JSONEditor.addChildToObject(workingFile, parentDefnName, childDefnName, childRefFile)
     },
     
     /*
@@ -113,8 +131,14 @@ export default new Vuex.Store({
     /*
       Add Inheritance
     */
-    addSuperClass(state, superClassName) {
-      JSONEditor.addSuperClass(state.currentFile.file, state.isSelected, superClassName)
+    addSuperClass(state, payload) {
+
+      let workingFile = state.currentFile.file
+      let subClassName = state.isSelected
+      let superClassName = payload.superClassName
+      let superClassRefFileName = payload.superClassRefFileName
+      
+      JSONEditor.addSuperClass(workingFile, subClassName, superClassName, superClassRefFileName, state.loadedFiles)
     },
 
     /*
@@ -131,7 +155,7 @@ export default new Vuex.Store({
       state.selectDefinitionNode = false
     },
     selectNode(state, payload) {
-      // console.log('select node')
+      // console.log('store: selectNode')
       // console.log(payload)
       state.isSelected = payload.nodeName;
       state.nodeName = payload.nodeName;
@@ -143,20 +167,30 @@ export default new Vuex.Store({
       state.nameRef = payload.nameRef
       state.isSubClassedNode = payload.isSubClassedNode
       state.isTaxonomyElement = payload.isTaxonomyElement
+      state.selectedFileName = payload.selectedFileName
+      state.defnIsLocal = payload.isLocal
 
       // console.log(payload.isSubClassedNode)
       // console.log('selectNode in store: ')
       // console.log(state.nodeParent)
-      if (state.currentFile.file[state.isSelected]["allOf"]) {
-        for (let i in state.currentFile.file[state.isSelected]["allOf"]) {
-          if (state.currentFile.file[state.isSelected]["allOf"][i]["type"]) {
-            if (state.currentFile.file[state.isSelected]["allOf"][i]["enum"]) {
-              state.nodeEnum = state.currentFile.file[state.isSelected]["allOf"][i]["enum"]
+
+      state.selectedDefnRefFile = payload.referenceFile
+      // console.log('does this reset view')
+      state.activeEditingView = 'EditDefinitionFormDisabled'
+
+
+      if (state.selectedDefnRefFile[state.isSelected]["allOf"]) {
+        for (let i in state.selectedDefnRefFile[state.isSelected]["allOf"]) {
+          if (state.selectedDefnRefFile[state.isSelected]["allOf"][i]["type"]) {
+            if (state.selectedDefnRefFile[state.isSelected]["allOf"][i]["enum"]) {
+              state.nodeEnum = state.selectedDefnRefFile[state.isSelected]["allOf"][i]["enum"]
             } else {
               state.nodeEnum = null
             }
           }
         }   
+      } else {
+        state.nodeEnum = null
       }
 
       // if (state.currentFile.file[state.isSelected]["enum"]) {
@@ -184,6 +218,7 @@ export default new Vuex.Store({
       state.showEditNodeView = false
       state.showDetailedView = true
       state.showCreateDefinitionForm = false
+      state.showLoadInDefinitionForm = false
     },
 
     /* 
@@ -205,10 +240,10 @@ export default new Vuex.Store({
       // console.log('node name: ' + payload.nodeName)
       // console.log('parent name: ' + payload.parent)
       if (state.nodeParent == 'root') {
-        console.log(1)
+        // console.log(1)
         JSONEditor.deleteAllNodes(payload.currentFile, state.nodeName)
       } else {
-        console.log(22)
+        // console.log(22)
         JSONEditor.deleteNode(payload.currentFile, payload.nodeName, payload.parent)
       }
     },
@@ -226,7 +261,15 @@ export default new Vuex.Store({
       state.showDetailedView = false
       state.showCreateNodeObjectView = false    
       state.showEditNodeView = false
-  
+      state.showLoadInDefinitionForm = false
+
+    },
+    showLoadInDefinitionForm(state) {
+      state.showLoadInDefinitionForm = true
+      state.showDetailedView = false
+      state.showCreateNodeObjectView = false
+      state.showEditNodeView = false
+      state.showCreateDefinitionForm = false
     },
     createNodeElement(state, payload) {
       // JSONEditor.createNodeElement(state.schemaFile, payload.nodeName, payload.nodeType, payload.nodeElementDescription)
@@ -264,7 +307,7 @@ export default new Vuex.Store({
         defn_attr = {
           "allOf": [
             {
-                "$ref": "#/components/schemas/TaxonomyElement"
+                "$ref": "Master-Solar-Taxonomy-030420.json#/components/schemas/TaxonomyElement"
             },
             {
                 "type": "object",
@@ -294,5 +337,26 @@ export default new Vuex.Store({
     //   let newFileJSON = JSONEditor.createNewDefnFile(payload.newFileTitle, payload.newFileDescription, payload.newFileFileName)
     //   // console.log(newFileJSON)
     // }
+
+    // when user loads in a file, it is put into the loadedFile object
+    // problem: what if someone loads in a file, references it in a new fiile, then unloads the old file. now the new file cant reference the old
+    loadFile(state, file) {
+      state.loadedFiles[file.fileName] = file
+
+      // console.log('loadedFiles')
+      // console.log(state.loadedFiles)
+
+    },
+    loadInDefinition(state, payload) {
+      let defnName = payload.defnName
+      let defnFile = payload.defnFile
+      let currentFile = state.currentFile.file
+      // console.log('defnName: ' + defnName + '\ndefnFile: ' + defnFile)
+      // console.log('current file: ')
+      // console.log(currentFile)
+
+      JSONEditor.loadInDefinition(currentFile, defnName, defnFile)
+
+    }
   }
 });

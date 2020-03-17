@@ -60,29 +60,60 @@ export function getSuperClasses(JSONFile, definitionName) {
 
 //builds the array of inherited and inherited inheritence recursively
 //implements transitive inheritance and returns as an object
-export function getSuperClassChildren(JSONFile, superClassRefArr, subClassObj) {
+export function getSuperClassChildren(JSONFile, superClassRefArr, subClassObj, referenceFile, key, loadedFiles) {
+    // console.log('########')
+    // console.log('JSON file:')
+    // console.log(JSONFile)
     // console.log('in get super class children')
+    // console.log('superClassArr')
+    // console.log(superClassRefArr)
+    // console.log('subclassObj')
+    // console.log(subClassObj)
+    // console.log('referenceFile')
+    // console.log(referenceFile)
+    // console.log('key: ' + key)
+    // console.log('########')
     let superClassChildren = {}
     let superClassName = ""
     let temp_super_children = {}
     let temp_super_class_ref = []
+    let file = ''
+    let tempRefFileName = ''
+
+    if (referenceFile) {
+        file = referenceFile
+    } else {
+        file = JSONFile
+    }
 
     for (let i in superClassRefArr) {
         superClassName = superClassRefArr[i].slice(superClassRefArr[i].lastIndexOf("/") + 1)
-        temp_super_class_ref = []
-        if (JSONFile[superClassName]["allOf"]) {
+        // console.log(superClassName)
+
+        tempRefFileName = getRefFileContext(superClassRefArr[i])
+        if (tempRefFileName != 'LOCAL') {
+            file = loadedFiles[tempRefFileName]["file"]
+            // console.log('new ref file')
+            // console.log(file)
+        }
+
+
+
+        if (file[superClassName]["allOf"]) {
             // might cause bug here if not using a deep copy
             // need to get both inherited objects and elements
-            for (let i in JSONFile[superClassName]["allOf"]) {
+            for (let i in file[superClassName]["allOf"]) {
                 temp_super_children = {}
-                if (JSONFile[superClassName]["allOf"][i]["properties"]) {
-                    temp_super_children = JSON.parse(JSON.stringify(JSONFile[superClassName]["allOf"][i]["properties"]))
+                if (file[superClassName]["allOf"][i]["properties"]) {
+                    temp_super_children = JSON.parse(JSON.stringify(file[superClassName]["allOf"][i]["properties"]))
                     Object.keys(temp_super_children).forEach( key => {
                         // console.log("key in deepcopy superclass: " + key)
                         temp_super_children[key].fromSuperClass = true
+                        temp_super_children[key].referenceFile = file
+
                     })
                 } else {
-                    temp_super_class_ref.push(JSONFile[superClassName]["allOf"][i]["$ref"])
+                    temp_super_class_ref.push(file[superClassName]["allOf"][i]["$ref"])
                     // only way to do show children of a superclasses' superclass is to recursively build it.
                     // if a superclasses' superclass has a superclass then recursion is the only way to build it.
                     // for now superclassing is "simple"
@@ -91,18 +122,21 @@ export function getSuperClassChildren(JSONFile, superClassRefArr, subClassObj) {
                 }
 
                 if (temp_super_class_ref.length != 0) {
-                    temp_super_children = {...temp_super_children, ...getSuperClassChildren(JSONFile, temp_super_class_ref, JSONFile[superClassName])}
+                    temp_super_children = {...temp_super_children, ...getSuperClassChildren(file, temp_super_class_ref, file[superClassName])}
                 }
 
                 superClassChildren = {...superClassChildren, ...temp_super_children}
             }
         } else {
-            let deepSuperClassObj = JSON.parse(JSON.stringify(JSONFile[superClassName]["properties"]))
+            let deepSuperClassObj = JSON.parse(JSON.stringify(file[superClassName]["properties"]))
             Object.keys(deepSuperClassObj).forEach( key => {
                 // console.log("key in deepcopy superclass: " + key)
                 deepSuperClassObj[key].fromSuperClass = true
+                deepSuperClassObj[key].referenceFile = file
             })
             // console.log(deepSuperClassObj)
+
+
             superClassChildren = {...superClassChildren, ...deepSuperClassObj}
         }
     }
@@ -117,6 +151,11 @@ export function getSuperClassChildren(JSONFile, superClassRefArr, subClassObj) {
     // console.log(test_obj)
     // console.log({...subClassObj["properties"], ...superClassChildren})
     // console.log({...subClassObj["properties"], ...superClassChildren})
+    // console.log('in superClass Children misc util: ')
+    // console.log({...subClassObj["properties"], ...superClassChildren})
+
+    // console.log('in superClass children')
+    // console.log({...subClassObj["properties"], ...superClassChildren})
     return {...subClassObj["properties"], ...superClassChildren}    
 }
 
@@ -124,6 +163,7 @@ export function getSuperClassChildren(JSONFile, superClassRefArr, subClassObj) {
 // returns bool. true for can inherit, false for cant inherit
 // a subclass cannot inherit from a superclass that has the subclass as an object member or as a superclass, or has the subclass in one of the object members or their superclasses
 export function checkInfiniteLoopErr(JSONFile, subClassName, superClassName) {
+    // console.log('in inf loop error')
     let allSuperClasses = getAllSuperClassesInDefn(JSONFile, superClassName)
     let allObjs = getAllObjInDefn(JSONFile, superClassName)
     let combinedObjsSuperClasses = allSuperClasses.concat(allObjs)
@@ -235,17 +275,26 @@ export function getAllObjInDefn(JSONFile, defnName) {
 // How to check for conflicts when adding a superclass or object to the defnObj:
 // - does the defnObj have a superclass 
 export function checkSuperClassObjConflict(JSONFile, defnName, superClassOrObjectNameToAdd) {
+    // console.log('in checkSuperClassObjConflict')
+    // console.log('json file')
+    // console.log(JSONFile)
+    // console.log('defnName')
+    // console.log(defnName)
     let defnTopLevelConflicts = getAllSuperClassesInDefn(JSONFile, defnName) 
+
+    // console.log(1)
     for (let i in defnTopLevelConflicts) {
         defnTopLevelConflicts = defnTopLevelConflicts.concat(getTopLevelObjects(JSONFile, defnTopLevelConflicts[i]))
     }
     defnTopLevelConflicts = defnTopLevelConflicts.concat(getTopLevelObjects(JSONFile, defnName))
     defnTopLevelConflicts = [...new Set(defnTopLevelConflicts)]
     // console.log(defnTopLevelConflicts)
+    // console.log(2)
 
     let addingSuperClassOrObjectName = [superClassOrObjectNameToAdd]
     addingSuperClassOrObjectName = addingSuperClassOrObjectName.concat(getAllSuperClassesInDefn(JSONFile, superClassOrObjectNameToAdd))
-    
+    // console.log(3)
+
     for (let i in addingSuperClassOrObjectName) {
         addingSuperClassOrObjectName = addingSuperClassOrObjectName.concat(getTopLevelObjects(JSONFile, addingSuperClassOrObjectName[i]))
     }
@@ -253,6 +302,7 @@ export function checkSuperClassObjConflict(JSONFile, defnName, superClassOrObjec
     addingSuperClassOrObjectName = [...new Set(addingSuperClassOrObjectName)]
     // console.log(addingSuperClassOrObjectName)
 
+    // console.log(4)
 
     let hasConflict = false
     // console.log('1: ' + hasConflict)
@@ -332,4 +382,274 @@ export function isTaxonomyElement(file, defnName) {
     }
 
     return retBool
+}
+
+export function isExternalRef(refStr) {
+    if (refStr[0] == "#") {
+        return false
+    } else {
+        return true
+    }
+}
+
+export function returnRefsRequired(fileObj) {
+    let refs = []
+    // let document = fileObj.file 
+    
+    for (let i in fileObj.file) {
+        if (fileObj.file[i]["$ref"]) {
+            if (isExternalRef(fileObj.file[i]["$ref"])) {
+                refs.push(fileObj.file[i]["$ref"].slice(0, fileObj.file[i]["$ref"].lastIndexOf("#")))
+            }
+        } else if (fileObj.file[i]["type"] == "object") {
+            for (let j in fileObj.file[i]["properties"]) {
+                if (isExternalRef(fileObj.file[i]["properties"][j]["$ref"])) {
+                    refs.push(fileObj.file[i]["properties"][j]["$ref"].slice(0, fileObj.file[i]["properties"][j]["$ref"].lastIndexOf("#")))
+                }
+            }
+        } else if (fileObj.file[i]["allOf"]) {
+            for (let j in fileObj.file[i]["allOf"]) {
+                if (fileObj.file[i]["allOf"][j]["$ref"]) {
+                    if (isExternalRef(fileObj.file[i]["allOf"][j]["$ref"])) {
+                        refs.push(fileObj.file[i]["allOf"][j]["$ref"].slice(0, fileObj.file[i]["allOf"][j]["$ref"].lastIndexOf("#")))
+                    }
+                }
+            }
+        } 
+    }
+
+    refs = [...new Set(refs)]
+
+    return refs
+    
+}
+
+// checks if files are opened to support the file you want to load
+// input: array w/ refs, tabs array with opened files
+// output: returns missing refs
+
+export function getMissingRefs(refsArr, fileArr) {
+    let loadedFiles = []
+    let missingRefs = []
+    for (let i in fileArr) {
+        loadedFiles.push(fileArr[i].fileName) 
+    }
+
+    // console.log('loadedFiles') 
+    // console.log(loadedFiles)
+
+    for (let i in refsArr) {
+        if (!loadedFiles.includes(refsArr[i])) {
+            missingRefs.push(refsArr[i])
+        }
+    }
+
+    return missingRefs
+}
+
+export function getDefnRef(file, defnName, parent, loadedFiles, childrenObj) {
+    // console.log('getDefnRef, miscUtilities')
+    // console.log('file: ')
+    // console.log(file)
+    // console.log('defnName: ' + defnName)
+    // console.log('parent: ' + parent)
+    // console.log('child obj: ')
+    // console.log(childrenObj)
+
+    // if it has parent, it is non-root
+    // if (parent) {
+    //     console.log('misc util, getDefnRef, file: ')
+    //     console.log(file)
+    //     console.log('misc util, defnname: ' + defnName)
+    //     console.log('misc util, parent: ' + parent)
+    
+    // }
+
+    let refFileName = ''
+
+
+    // if (parent) {
+    //     if (file[parent]["properties"][defnName]["$ref"]) {
+    //         console.log('misc util, getdefn ref, 111:')
+    //         console.log(file[parent]["properties"][defnName]["$ref"])
+    //         refFileName = file[parent]["properties"][defnName]["$ref"].slice(0, file[parent]["properties"][defnName]["$ref"].lastIndexOf("#"))
+    //         console.log('misc util, getdefnref: ')
+    //         console.log(refFileName)
+    //     }        
+    // } else {
+    //     if (file[defnName]["$ref"]) {
+    //         refFileName = file[defnName]["$ref"].slice(0, file[defnName]["$ref"].lastIndexOf("#"))
+    //     }
+    // }
+
+
+    // if (file[defnName]["$ref"]) {
+    //     console.log('getdefnref 1')
+    //     if (isExternalRef(file[defnName]["$ref"])) {
+    //         refFileName = file[defnName]["$ref"].slice(0, file[defnName]["$ref"].lastIndexOf("#"))
+    //     }
+    // } else if (file[defnName]["type"] == "object") {
+    //     console.log('getdefnref 2')
+    //     for (let j in file[defnName]["properties"]) {
+    //         if (isExternalRef(file[defnName]["properties"][j]["$ref"])) {
+    //             refFileName = file[defnName]["properties"][j]["$ref"].slice(0, file[defnName]["properties"][j]["$ref"].lastIndexOf("#"))
+    //         }
+    //     }
+    // } else if (file[defnName]["allOf"]) {
+    //     console.log('getdefnref 1')
+    //     for (let j in file[defnName]["allOf"]) {
+    //         if (file[defnName]["allOf"][j]["$ref"]) {
+    //             if (isExternalRef(file[defnName]["allOf"][j]["$ref"])) {
+    //                 refFileName = file[defnName]["allOf"][j]["$ref"].slice(0, file[defnName]["allOf"][j]["$ref"].lastIndexOf("#"))
+    //             }
+    //         }
+    //     }
+    // } 
+
+    // console.log('checking ref: ')
+    // console.log((typeof file[defnName]["$ref"]) !== 'undefined')
+
+    // if (parent) {
+    //     refFileName = file[parent]["properties"][defnName]["$ref"]
+    // } else {
+    //     console.log('in root')
+    //     if ((typeof file[defnName]["$ref"]) !== 'undefined') {
+    //         console.log('getdefnref 1')
+    //         refFileName = file[defnName]["$ref"]
+    //     } else if (file[defnName]["type"] == "object") {
+    //         console.log('getdefnref 2')
+    //         for (let j in file[defnName]["properties"]) {
+    //                 refFileName = file[defnName]["properties"][j]["$ref"]
+    //         }
+    //     } else if (file[defnName]["allOf"]) {
+    //         console.log('getdefnref 1')
+    //         for (let j in file[defnName]["allOf"]) {
+    //             if (file[defnName]["allOf"][j]["$ref"]) {
+    //                 refFileName = file[defnName]["allOf"][j]["$ref"]
+    //             }
+    //         }
+    //     } 
+    // }
+
+    // if (parent) {
+    //     if (file[parent][defnName]["$ref"]) {
+    //         console.log('getdefnref 1')
+    //         refFileName = file[parent]["$ref"]
+    //     } else if (file[parent][defnName]["type"] == "object") {
+    //                 refFileName = file[parent][defnName]["properties"][j]["$ref"].slice(0, file[parent][defnName]["properties"][j]["$ref"].lastIndexOf("#"))
+    //     } else if (file[parent][defnName]["allOf"]) {
+    //         console.log('getdefnref 1')
+    //         for (let j in file[parent][defnName]["allOf"]) {
+    //             if (file[parent][defnName]["allOf"][j]["$ref"]) {
+    //                     refFileName = file[parent][defnName]["allOf"][j]["$ref"].slice(0, file[parent][defnName]["allOf"][j]["$ref"].lastIndexOf("#"))
+    //             }
+    //         }
+    //     } 
+    // } else {
+    //     if (file[defnName]["allOf"]) {
+    //         console.log('111')
+    //         console.log('file')
+    //         console.log(file)
+    //         console.log('defnName: ' + defnName)
+    //         console.log(file[defnName]["allOf"][0])
+    //         for (let j in file[defnName]["allOf"]) {
+    //             console.log(j)
+    //             if (file[defnName]["allOf"][j]["$ref"]) {
+    //                 console.log('222')
+    //                 refFileName = file[defnName]["allOf"][j]["$ref"]
+    //             }
+    //         }        
+    //     } else if (file[defnName]["type"]) {
+    //         // # means the reference is local
+    //         refFileName = '#'
+    //     }
+    // }
+
+    if (parent) {
+        if (file[parent]) {
+            if (file[parent]["properties"]) {
+                // console.log('1 parent')
+                refFileName = file[parent]['properties'][defnName]["$ref"]
+            } else if (file[parent]["allOf"]) {
+                // console.log('2 parent')
+                for (let j in file[parent]["allOf"]) {
+                    if (file[parent]["allOf"][j]["properties"]) {
+                            refFileName = file[parent]["allOf"][j]["properties"][defnName]['$ref']
+                    }
+                }
+            } else if (file[parent]["$ref"]) {
+                let parentRef = file[parent]["$ref"]
+                parentRef = getRefFileContext(parentRef)
+                if (parentRef == 'LOCAL') {
+                    refFileName = "#"
+                } else {
+                    refFileName = loadedFiles[parentRef]["file"][parent]["properties"][defnName]["$ref"]
+                }
+            } else {
+                refFileName = "#"
+                // console.log('8 parent')
+            }
+        } else if (childrenObj[defnName]) {
+            refFileName = childrenObj[defnName]["$ref"]
+        } 
+
+    } else {
+        // console.log('7 no parent')
+        // if (file[defnName]["allOf"]) {
+        //     console.log('3 all of not parent')
+        //     // console.log('111')
+        //     // console.log('file')
+        //     // console.log(file)
+        //     // console.log('defnName: ' + defnName)
+        //     // console.log(file[defnName]["allOf"][0])
+        //     for (let j in file[defnName]["allOf"]) {
+        //         // console.log(j)
+        //         if (file[defnName]["allOf"][j]["$ref"]) {
+        //             // console.log('222')
+        //             refFileName = file[defnName]["allOf"][j]["$ref"]
+        //         }
+        //     }        
+        // } 
+        if (file[defnName]["$ref"]) {
+            // console.log('4 all of no parent')
+            // # means the reference is local
+            refFileName = file[defnName]["$ref"]
+        } else {
+            // console.log('5 all of no parent')
+            refFileName = "#"
+        }
+    }
+
+
+
+    // console.log('getDefnRef fin')
+    // console.log(file[defnName])
+    // console.log(refFileName)
+
+    return refFileName
+}
+
+export function getRefFileContext(refString) {
+    if (refString[0] == '#') {
+        return 'LOCAL'
+    } else {
+        return refString.slice(0, refString.lastIndexOf("#"))
+    }
+}
+
+
+export function getFileNameFromNameRef(nameRef) {
+
+}
+
+
+export function generateUniqueRef(defnName, fileName, parent) {
+    let returnRef = ''
+    if (parent) {
+        returnRef = defnName + "-" + parent + "-" + fileName
+    } else {
+        returnRef = defnName + "-" + fileName
+    }
+    // returnRef = returnRef + "-" + Math.random().toString(36).replace('0.', '')
+    return returnRef
 }

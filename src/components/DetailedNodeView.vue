@@ -2,15 +2,15 @@
     <div class="detailed-view-container">
         <span v-if="$store.state.isSelected">
             <b-table
-                stacked
+                :fields=fields
                 :items="defnDetails"
                 id="detailsTable"
                 ref="nodeDetailTable"
             ></b-table>
             <div class="detailed-view-buttons">
                 <span v-if="$store.state.inOASTab">
-                    <b-button v-if="$store.state.nodeParent == 'root'" variant="primary" size="sm" @click="showEditNodeView">Edit definition</b-button>
-                    <b-button v-else variant="primary" size="sm" v-b-modal.modal-edit-node>Edit definition</b-button>
+                    <b-button v-if="$store.state.nodeParent == 'root'" variant="primary" size="sm" @click="showEditNodeView" :disabled="!$store.state.defnIsLocal">Edit definition</b-button>
+                    <b-button v-else variant="primary" size="sm" v-b-modal.modal-edit-node :disabled="!$store.state.defnIsLocal">Edit definition</b-button>
 
                     <b-button v-b-modal.modal-delete-node variant="danger" size="sm">
                         <span v-if="$store.state.nodeParent == 'root'"> Delete </span>
@@ -70,6 +70,7 @@ export default {
             nodeDetails: null,
             defnName: '',
             showError: false,
+            fields: ['Attributes', 'Values'],
         }
     },
     methods: {
@@ -123,11 +124,13 @@ export default {
             }
         },
         defnDetails() {
+
+            // console.log('***** start defnDetails *******')
             let temp_defn_name = this.defnName
             let temp_doc = this.$store.state.nodeDescription;
             let temp_superClassList = []
             let temp_superClassListStr = ''
-            let temp_ret_obj = {}
+            let temp_ret_obj = null
             let temp_enum = this.$store.state.nodeEnum
             if (!temp_doc) {
                 temp_doc = "Documentation not available"
@@ -138,17 +141,22 @@ export default {
             } else {
                 temp_enum = temp_enum.join(', ')
             }
+            // console.log('defnDetails 1')
+            let defnDoc = this.$store.state.selectedDefnRefFile
 
-            if (this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"]) {
-                for (let i in this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"]) {
-                    if (this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"][i]["$ref"]) {
+            // console.log('defnDoc')
+            // console.log(defnDoc)
+
+            if (defnDoc[this.$store.state.isSelected]["allOf"]) {
+                for (let i in defnDoc[this.$store.state.isSelected]["allOf"]) {
+                    if (defnDoc[this.$store.state.isSelected]["allOf"][i]["$ref"]) {
                         
-                        temp_superClassList.push(this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"][i]["$ref"]
-                            .slice(this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"][i]["$ref"].lastIndexOf("/") + 1))
+                        temp_superClassList.push(defnDoc[this.$store.state.isSelected]["allOf"][i]["$ref"]
+                            .slice(defnDoc[this.$store.state.isSelected]["allOf"][i]["$ref"].lastIndexOf("/") + 1))
                     }
                 }
             }
-            
+            // console.log('defnDetails 2')
             if (temp_superClassList.length == 0) {
                 temp_superClassListStr = 'None'
             } else {
@@ -157,38 +165,40 @@ export default {
             
             // console.log('detailed node view: ' + this.$store.state.nodeEnum)
 
-            
-            if ((this.$store.state.currentFile.file[this.$store.state.isSelected]["type"] == "object" 
-                || this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"]) 
+            // console.log('defnDetails 3')
+            if ((defnDoc[this.$store.state.isSelected]["type"] == "object" 
+                || defnDoc[this.$store.state.isSelected]["allOf"]) 
                 && !this.$store.state.isTaxonomyElement) {
 
-                temp_ret_obj = {
-                    "Name": this.$store.state.nodeName,
-                    "Type": this.$store.state.nodeType,
-                    "Documentation": temp_doc,
-                    "Superclasses": temp_superClassListStr
-                }
+                temp_ret_obj = [
+                    { "Attributes": "Name", "Values": this.$store.state.nodeName },
+                    { "Attributes": "Type", "Values": this.$store.state.nodeType },
+                    { "Attributes": "Documentation", "Values": temp_doc },
+                    { "Attributes": "Superclasses", "Values": temp_superClassListStr }
+                ]
 
             } else if (this.$store.state.isTaxonomyElement) {
-                temp_ret_obj = {
-                    "Name": this.$store.state.nodeName,
-                    "Type": this.$store.state.nodeType,
-                    "Enumeration": temp_enum,
-                    "Documentation": temp_doc,
-                    "Superclasses": temp_superClassListStr
-                }                
+                temp_ret_obj = [
+                    { "Attributes": "Name", "Values": this.$store.state.nodeName },
+                    { "Attributes": "Type", "Values": this.$store.state.nodeType },
+                    { "Attributes": "Enumeration", "Values": temp_enum },
+                    { "Attributes": "Documentation", "Values": temp_doc },
+                    { "Attributes": "Superclasses", "Values": temp_superClassListStr }
+                ]                
             } else {
-                temp_ret_obj = {
-                    "Name": this.$store.state.nodeName,
-                    "Type": this.$store.state.nodeType,
-                    "Enumeration": temp_enum,
-                    "Documentation": temp_doc,
-                }
+                temp_ret_obj = [
+                    { "Attributes": "Name", "Values": this.$store.state.nodeName },
+                    { "Attributes": "Type", "Values": this.$store.state.nodeType },
+                    { "Attributes": "Enumeration", "Values": temp_enum },
+                    { "Attributes": "Documentation", "Values": temp_doc }
+                ]                
             }
             
-            let arr = []
-            arr.push(temp_ret_obj)
+            let arr = temp_ret_obj
+            // arr.push(temp_ret_obj)
             // console.log(arr)
+            // console.log('***** end defnDetails *******')
+
             return arr
         }
     }
@@ -223,5 +233,16 @@ export default {
 #error-msg {
     color: red;
     font-weight: bold;
+}
+
+.table.b-table.b-table-stacked > tbody > tr > [data-label]::before {
+    float: none !important;
+}
+
+
+
+.detailed-view-container {
+    padding-left: 15px;
+    padding-right: 15px; 
 }
 </style>

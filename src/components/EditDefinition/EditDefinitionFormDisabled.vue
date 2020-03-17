@@ -3,7 +3,7 @@ Child of EditDefinition, edit definition form disabled
 -->
 
 <template>
-    <div>
+    <div id="edit-definition-form-disabled-container">
         <b-form>
             <b-form-group
                 id="edit-node-name-input-group"
@@ -56,8 +56,20 @@ export default {
         }
     }
 }
+
+//might need 
+// .edit-definition-form {
+//     padding-left: 15px;
+//     padding-right: 15px;
+// }
+
+
 </script>
 
 <style>
+#edit-definition-form-disabled-container {
+    padding-left: 15px;
+    padding-right: 15px;    
+}
 
 </style>

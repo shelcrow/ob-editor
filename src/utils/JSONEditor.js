@@ -39,14 +39,14 @@ export function deleteAllNodes(JSONFile, nodeName) {
             }
         }
     })
-    console.log('del nodes fin')
+    // console.log('del nodes fin')
 }
 
 //Remove single node from object. Removes every instance of the node which is in the object
 export function deleteNode(JSONFile, nodeName, parentName) {
     // console.log('node name: ' + nodeName)
     // console.log('parent name: ' + parentName)
-    console.log('2')
+    // console.log('2')
 
     if (parentName == 'root') {
         Vue.delete(JSONFile, nodeName)
@@ -74,16 +74,16 @@ export function deleteNode(JSONFile, nodeName, parentName) {
             }
         }
     } else {
-        console.log('del node 1')
-        console.log('parent name: ' + parentName + '\nnodeName: ' + nodeName)
-        console.log(JSONFile[parentName])
+        // console.log('del node 1')
+        // console.log('parent name: ' + parentName + '\nnodeName: ' + nodeName)
+        // console.log(JSONFile[parentName])
         if (JSONFile[parentName]["properties"]) {
             // console.log("non-allOf")
             Vue.delete(JSONFile[parentName]["properties"], nodeName)
         } else {
-            console.log("allOf (in del node")
-            console.log('parent name: ' + parentName)
-            console.log('nodeName: ' + nodeName)
+            // console.log("allOf (in del node")
+            // console.log('parent name: ' + parentName)
+            // console.log('nodeName: ' + nodeName)
             for (let i in JSONFile[parentName]["allOf"]) {
                 if (JSONFile[parentName]["allOf"][i]["properties"]) {
                     Vue.delete(JSONFile[parentName]["allOf"][i]["properties"], nodeName)
@@ -126,7 +126,7 @@ export function deleteNode(JSONFile, nodeName, parentName) {
 
 //Edit node
 export function editNode(JSONFile, nodeName, newDescription) {
-    console.log('in editNode json editor')
+    // console.log('in editNode json editor')
     let nodeEdit = {
             "description": newDescription,
     }
@@ -145,6 +145,7 @@ export function editNode(JSONFile, nodeName, newDescription) {
     } else {
         Vue.set(JSONFile, nodeName, nodeEdit)
     }
+
 }
 
 //Create node
@@ -186,66 +187,113 @@ export function createArrayOfAllElementDefinitions(JSONFile, array) {
 //add child to object whether element or object
 //adding children to the top level object does not propagate throughout the reference objects
 // if all non-top level elements/objects are references, do we need to add the child to anything other than the top level defn? probably not
-export function addChildToObject(JSONFile, parentName, childName, nodeType, childObj) {
+export function addChildToObject(JSONFile, parentName, childName, childRefFile) {
 
-    // Object.keys(JSONFile).forEach(key => {
-    //     if (key == parentName && JSONFile[key].properties) {
-            // console.log("key match")
-            // console.log("parent name: " + parentName)
-            // console.log("parent obj: " + JSONFile[parentName])
-            // console.log(JSONFile[parentName])
-
-            // console.log("child name: " + childName)
-            // console.log("child obj: " + childObj)
-            // console.log(childObj)
-
-    //         Vue.set(JSONFile[parentName].properties, childName, childObj)
-    //     } else if (JSONFile[key].properties) {
-    //         // console.log("recursing obj")
-    //         addChildToObject(JSONFile[key].properties, parentName, childName, nodeType, childObj)
+    // if (JSONFile[parentName]["allOf"]) {
+    //     for (let i in JSONFile[parentName]["allOf"]) {
+    //         if (JSONFile[parentName]["allOf"][i]["properties"]) {
+    //             Vue.set(JSONFile[parentName]["allOf"][i]["properties"], childName, childObj)
+    //         }
     //     }
-    // })
-    if (JSONFile[parentName]["allOf"]) {
-        for (let i in JSONFile[parentName]["allOf"]) {
-            if (JSONFile[parentName]["allOf"][i]["properties"]) {
-                Vue.set(JSONFile[parentName]["allOf"][i]["properties"], childName, childObj)
+    // } else {
+    //     Vue.set(JSONFile[parentName].properties, childName, childObj)
+    // }
+
+    let childObj = null
+    let parentFile = JSONFile.file
+    let parentFileName = JSONFile.fileName
+
+    let childFile = childRefFile.file
+    let childFileName = childRefFile.fileName
+
+    // console.log('in jsoneditor, addChildToObject')
+    // console.log('JSONFile')
+    // console.log(JSONFile)
+    // console.log('parentName')
+    // console.log(parentName)
+    // console.log('parentFile')
+    // console.log(parentFile)
+    // console.log('parent file name')
+    // console.log(parentFileName)
+    // console.log('childName')
+    // console.log(childName)
+    // console.log('childFileName')
+    // console.log(childFileName)
+    // console.log('childFile')
+    // console.log(childFile)
+
+    if (JSONFile.fileName == childFileName) {
+        childObj = {
+            "$ref": "#/components/schemas/" + childName
+        }
+
+        if (JSONFile["file"][parentName]["allOf"]) {
+            for (let i in JSONFile["file"][parentName]["allOf"]) {
+                if (JSONFile["file"][parentName]["allOf"][i]["properties"]) {
+                    Vue.set(JSONFile["file"][parentName]["allOf"][i]["properties"], childName, childObj)
+                }
             }
+        } else {
+            Vue.set(JSONFile["file"][parentName].properties, childName, childObj)
         }
     } else {
-        Vue.set(JSONFile[parentName].properties, childName, childObj)
+        childObj = {
+            "$ref": childFileName + "#/components/schemas/" + childName
+        }
+
+        if (JSONFile["file"][parentName]["allOf"]) {
+            for (let i in JSONFile["file"][parentName]["allOf"]) {
+                if (JSONFile["file"][parentName]["allOf"][i]["properties"]) {
+                    Vue.set(JSONFile["file"][parentName]["allOf"][i]["properties"], childName, childObj)
+                }
+            }
+        } else {
+            Vue.set(JSONFile["file"][parentName].properties, childName, childObj)
+        }        
     }
+
 
 }
 
 // add superClass to object, making that object a subclass
-export function addSuperClass(JSONFile, subClass, superClass) {
+export function addSuperClass(workingFile, subClassName, superClassName, superClassRefFileName, loadedFiles) {
+    // console.log('in jsoneditor, addsuperclass: ')
+    // console.log('workingFile: ')
+    // console.log(workingFile)
+    // console.log('subClassName: ' + subClassName)
+    // console.log('superClassName: ' + superClassName)
+    // console.log('superClassRefFileName: ' + superClassRefFileName)
+    // console.log('loadedFiles: ')
+    // console.log(loadedFiles)
+
     let refExists = false
     let allOfArr = []
     let allOfObj = {}
-    if (JSONFile[subClass]["allOf"] !== undefined) {
-        for (let i of JSONFile[subClass].allOf) {
-            if (i["ref"] == '#/components/schemas/' + superClass) {
+
+    if (workingFile[subClassName]["allOf"] !== undefined) {
+        for (let i of JSONFile[workingFile].allOf) {
+            if (i["ref"] == superClassRefFileName + '#/components/schemas/' + superClassName) {
                 refExists = true
             }
         }
         if (!refExists) {
-            JSONFile[subClass].allOf.push(
+            JSONFile[subClassName].allOf.push(
                 { 
-                    "$ref": "#/components/schemas/" + superClass
+                    "$ref": superClassRefFileName + "#/components/schemas/" + superClassName
                 }
             )
         }
     } else {
         allOfArr.push({
-            "$ref": "#/components/schemas/" + superClass
+            "$ref": superClassRefFileName + "#/components/schemas/" + superClassName
         })
         // push deep clone. may need a better way to deep clone js objs. possibly lodash
-        allOfArr.push(JSON.parse(JSON.stringify(JSONFile[subClass])))
+        allOfArr.push(JSON.parse(JSON.stringify(workingFile[subClassName])))
         allOfObj = {
             "allOf": allOfArr
         }
-        Vue.delete(JSONFile, subClass)
-        Vue.set(JSONFile, subClass, allOfObj)
+        Vue.delete(workingFile, subClassName)
+        Vue.set(workingFile, subClassName, allOfObj)
     }
 }
 
@@ -304,14 +352,14 @@ export function removeEnum(JSONFile, defnName, enumName) {
         if (JSONFile[defnName]["allOf"][i]["enum"]) {
             let enum_index = JSONFile[defnName]["allOf"][i]["enum"].indexOf(enumName)
             if (JSONFile[defnName]["allOf"][i]["enum"].length == 1) {
-                console.log('json editor, removeEnum, 1:')
+                // console.log('json editor, removeEnum, 1:')
                 Vue.delete(JSONFile[defnName]["allOf"][i], "enum")
             } else {
-                console.log('json editor, removeEnum, 2:')
-                console.log('enum index: ' + enum_index)
-                console.log('enum obj')
-                console.log(JSONFile[defnName]["allOf"][i])
-                console.log(JSONFile[defnName]["allOf"][i]["enum"])
+                // console.log('json editor, removeEnum, 2:')
+                // console.log('enum index: ' + enum_index)
+                // console.log('enum obj')
+                // console.log(JSONFile[defnName]["allOf"][i])
+                // console.log(JSONFile[defnName]["allOf"][i]["enum"])
 
                 Vue.delete(JSONFile[defnName]["allOf"][i]["enum"], enum_index)
             }
@@ -338,4 +386,15 @@ export function createNewDefnFile(title, description, fileName) {
 
     return returnNewFileObj
 
+}
+
+export function loadInDefinition(workingFile, defnName, refFile) {
+    let defnObj = {
+            "$ref": refFile + "#/components/schemas/" + defnName
+    }
+
+    Vue.set(workingFile, defnName, defnObj)
+
+    // console.log('loaded defn in file')
+    // console.log(workingFile)
 }

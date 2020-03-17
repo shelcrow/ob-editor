@@ -191,18 +191,18 @@
             file_obj["file"] = JSON.parse(reader.result).components.schemas
         }
         file_obj["file"] = JSON.stringify(file_obj["file"])
-        console.log("file obj: ")
-        console.log(file_obj["file"])
+        // console.log("file obj: ")
+        // console.log(file_obj["file"])
 
-        console.log('load file: ')
+        // console.log('load file: ')
 
         let check_duplicate_file = false
 
         for (let i in this.tabs) {
-          console.log('tab obj: ')
-          console.log(i)
-          console.log('tab file name: ' + i.fileName)
-          console.log('file obj file name: ' + file_obj.fileName)
+          // console.log('tab obj: ')
+          // console.log(i)
+          // console.log('tab file name: ' + i.fileName)
+          // console.log('file obj file name: ' + file_obj.fileName)
           if (this.tabs[i].fileName == file_obj.fileName) {
             check_duplicate_file = true
           }
@@ -233,13 +233,13 @@
         this.selectedMasterFileName = null
       },
       readOnly() {
-        console.log(this.readOnly)
+        // console.log(this.readOnly)
       },
       file() {
         if (this.file) {
-          console.log(this.file.name) 
+          // console.log(this.file.name) 
         } else {
-          console.log(this.file)
+          // console.log(this.file)
         }
       },
       selectedIndex() {

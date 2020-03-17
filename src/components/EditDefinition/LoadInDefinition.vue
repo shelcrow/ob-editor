@@ -1,50 +1,37 @@
-<!-- 
-Component for adding inheritance to objects
--->
-
 <template>
-    <div class="editor-function-container">
-        <div class="editor-function-body-container">
+    <div id="load-in-defn-edit-view-container">
+        <div id="load-in-defn-container">
             <div>Select document:</div>
-            <b-form-select v-model="selectedFileName" :options="getLoadedFiles" :select-size="4" id="select-form-files"></b-form-select>
-            <br />
+            <b-form-select v-model="selectedFile" :options="getLoadedFiles" :select-size="4" id="select-form-files"></b-form-select>
             <b-form-group 
                 id="node-selector-input-label"
-                label="Choose definition to add to object:"
+                label="Search for definition:"
                 label-for="node-selector-input"
             >
                 <b-form-input v-model="searchTerm" placeholder="Search for definition..."></b-form-input>
             </b-form-group>
-            <div>Select definition to add:</div>
-            <div class="file-elements-list">
-                <span v-if="selectedFileName">
+            <div>Select definition to load in:</div>
+            <div id="load-in-defn-file-defns-container">
+                <span v-if="selectedFile">
                     <li v-for="(name, index) in fileElements" id="defn-from-file" @click="selectDefn(index, name)" :class="{'selected-node': index == selectedDefnIndex}"> {{ name }}</li>
                 </span>
             </div>
             <b-table
                 :items="defnDetails"
-                id="add-member-detail-table"
-                ref="add-member-detail-table"
-                v-if="selectedSuperClassName"
+                id="loadInDefnDetailsTable"
+                ref="loadInDefnDetailTable"
+                v-if="selectedDefnName"
             ></b-table>
+
         </div>
-        <div class="error-container">
-            <span v-if="showErrorInfinite || showErrorConflict">
-                <p id="error-msg" v-if="showErrorInfinite">Can't add this, will cause infinite loop error. Object or superclass contains the one you're trying to add</p>
-                <p id="error-msg" v-if="showErrorConflict">Can't add this, will cause conflict error. Object or superclass is being referenced already</p>
+        <div id="load-in-defn-footer">
+            <span id="edit-form-buttons">
+                <b-button @click="loadInDefinition" :disabled="!selectedDefnName" size="sm" variant="primary">Load In</b-button>
+                <b-button @click="showDetailedView" size="sm">Cancel</b-button>
+                <!-- <b-alert :show="!preSubmit" variant="success" dismissible @dismissed="showDetailedView">
+                    Create element was successful.
+                </b-alert> -->
             </span>
-        </div>
-        <div class="editor-function-footer-container">
-            <b-button variant="primary" @click="submitAddSuperClass" size="sm" v-if="!maxInheritance">
-                <span v-if="!hasSubmitted">Add</span>
-                <span v-else>Add another</span>            
-            </b-button>
-            <span v-b-popover.hover.top="'Can only inherit from one superclass. Remove superclass if you want to add a different one.'" v-if="maxInheritance">
-                <b-button variant="primary" size="sm" disabled>
-                    Add
-                </b-button>
-            </span>
-            <b-button @click="goPreviousView" size="sm">Cancel</b-button>
         </div>
     </div>
 </template>
@@ -52,67 +39,39 @@ Component for adding inheritance to objects
 <script>
 import * as miscUtilities from "../../utils/miscUtilities"
 
-export default {
+export default{
     data() {
         return {
-            searchTerm: '',
-            superClassName: '',
-            showErrorInfinite: false,
-            showErrorConflict: false,
-            hasSubmitted: false,
-
-            selectedFileName: null,
+            selectedFile: null,
             selectedDefnIndex: null,
-            selectedSuperClassName: null,
-            selectedDefnType: null,
-            selectedDefnDescrip: null
+            selectedDefnName: null,
+            searchTerm: '',
         }
     },
+    created() {
+        // use when refactor to dynamic components for disabling the editing functions
+        // console.log('this created')
+        // this.selectedFile = null
+        // this.selectedDefnIndex = null
+        // this.selectedDefnName = null
+    },
     methods: {
-        selectDefn(index, superClassName) {
+        showDetailedView() {
+            this.$store.commit("showDetailedView")
+        },
+        selectDefn(index, name) {
             this.selectedDefnIndex = index;
-            this.selectedSuperClassName = superClassName
-            this.showErrorInfinite = false
-            this.showErrorConflict = false
+            this.selectedDefnName = name
         },
-        submitAddSuperClass() {
-            // if (miscUtilities.checkInfiniteLoopErr(this.$store.state.currentFile.file, this.$store.state.isSelected, this.superClassName)) {
-            //     this.showErrorInfinite = true
-            // } 
-
-            // if (miscUtilities.checkSuperClassObjConflict(this.$store.state.currentFile.file, this.$store.state.isSelected, this.superClassName)) {
-            //     this.showErrorConflict = true
-            // }
-
-            if (!this.showErrorInfinite && !this.showErrorConflict) {
-                this.$store.commit({
-                    type: "addSuperClass", 
-                    superClassName: this.selectedSuperClassName,
-                    superClassRefFileName: this.selectedFileName
-                })
-                this.hasSubmitted = true
-            }
-        },
-        goPreviousView() {
-            this.$store.state.activeEditingView = 'EditDefinitionFormDisabled'
+        loadInDefinition() {
+            this.$store.commit({
+                type: "loadInDefinition",
+                defnFile: this.selectedFile,
+                defnName: this.selectedDefnName
+            })
         }
     },
     computed: {
-        fileElements() {
-            if (this.selectedFileName) {
-                let fileElements = miscUtilities.getAllObjectsFlat(this.$store.state.loadedFiles[this.selectedFileName]["file"])
-                // console.log('file elements: ')
-                // console.log(fileElements)
-
-                return fileElements.filter( node => {
-                    // console.log('node: ')
-                    // console.log(node)
-                    if ( node.toLowerCase() != this.$store.state.isSelected.toLowerCase() ) {
-                        return node.toLowerCase().includes(this.searchTerm.toLowerCase())
-                    }   
-                }).sort()
-            }
-        },
         getLoadedFiles() {
             let optionsArr = []
             for (let i in this.$store.state.loadedFiles) {
@@ -126,11 +85,22 @@ export default {
             // console.log(optionsArr)
             return optionsArr
         },
+        fileElements() {
+            let fileElements = Object.keys(this.$store.state.loadedFiles[this.selectedFile]["file"])
+            // console.log('file elements: ')
+            // console.log(fileElements)
+
+            return fileElements.filter( node => {
+                // console.log('node: ')
+                // console.log(node)
+                return node.toLowerCase().includes(this.searchTerm.toLowerCase())
+            }).sort()
+        },
         defnDetails() {
             // console.log('***** start defnDetails *******')
             let temp_ret_obj = null
 
-            let defnName = this.selectedSuperClassName
+            let defnName = this.selectedDefnName
             let defnType = ''
             let defnDescrip = "Documentation not available"
             let defnEnum = ''
@@ -143,22 +113,12 @@ export default {
             // console.log('defnDetails 1')
             // console.log('defnName')
             // console.log(defnName)
-
-            // console.log('selected fileName: ' + this.selectedFileName)
-
-            let defnFile = this.$store.state.loadedFiles[this.selectedFileName]["file"]
+            let defnFile = this.$store.state.loadedFiles[this.selectedFile]["file"]
 
             // console.log('defnDescrip')
             // console.log(defnDescrip)
 
-            // console.log('defn File: ')
-            // console.log(defnFile)
-
-            // console.log('1')
-
             if (defnFile[defnName]["allOf"]) {
-                // console.log('2')
-
                 if (miscUtilities.isTaxonomyElement(defnFile, defnName)) {
                     typeOfDefn = 'TaxonomyElement'
                 } else {
@@ -187,8 +147,6 @@ export default {
                     }
                 }
             } else if (defnFile[defnName]["properties"]) {
-                // console.log('3')
-
                 typeOfDefn = 'Obj'
                 if (defnFile[defnName]["type"]) {
                     defnType = defnFile[defnName]["type"]
@@ -200,8 +158,6 @@ export default {
 
                 defnObjChildren = Object.keys(defnFile[defnName]["properties"])
             } else {
-                // console.log('4')
-
                 typeOfDefn = 'Elem'
                 if (defnFile[defnName]["description"]) {
                     defnDescrip = defnFile[defnName]["description"]
@@ -275,69 +231,67 @@ export default {
             // console.log('***** end defnDetails *******')
 
             return arr
-        },
-        maxInheritance() {
-            console.log('in add inheritance, maxInheritance')
-            if (this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"] !== undefined) {
-                console.log(this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"].length)
-                if (this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"].length > 1) {
-                    console.log('max inheritance: true')
-
-                    return true
-                } else {
-                    console.log('max inheritance: false')
-
-                    return false
-                }
-            } else {
-                console.log('max inheritance: false')
-
-                return false;
-            }
         }
     },
     watch: {
-        selectedFileName() {
-            // console.log(this.selectedFile)
+        "$store.state.showLoadInDefinitionForm"() {
+            this.selectedFile = null
             this.selectedDefnIndex = null
-            this.selectedSuperClassName = null
+            this.selectedDefnName = null
+        },
+        selectedFile() {
             this.searchTerm = ''
+            this.selectedDefnIndex = null
+            this.selectedDefnName = null
         }
     }
 }
+
 </script>
 
 <style>
-.node-list {
+#load-in-defn-edit-view-container {
+    display: grid;
+    height: 100%;
+    grid-template-rows: 1fr 50px;    
+}
+
+#load-in-defn-container {
+    padding-top: 9px;
+    overflow-y: auto;
+    grid-row: 1 / 2;
+    padding-left: 15px;
+    padding-right: 15px;
+    
+}
+
+#load-in-defn-file-defns-container {
     height: 250px;
     overflow-y: auto;
     background-color: white;
     border-top: 1px solid black;
     border-left: 1px solid black;
     border-right: 1px solid black;
-
     margin-bottom: 4px;
 
 }
 
-.node-in-list {
+#defn-from-file {
     list-style: none;
     border-bottom: 1px solid black;
 }
 
-.selected-node {
-    background-color: #89CFF0;
+#select-form-files {
+    margin-bottom: 10px;
 }
 
-.error-container {
+#load-in-defn-footer {
+    grid-row: 2 / 3;
     display: flex;
     justify-content: center;
     align-items: center;
-}
-
-#error-msg {
-    color: red;
-    font-weight: bold;
+    border: #d3d3d3 solid 1px;
 }
 
 </style>
+

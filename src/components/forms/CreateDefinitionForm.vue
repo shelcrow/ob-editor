@@ -102,4 +102,9 @@ export default {
     align-items: center;
 }
 
+.create-element-container {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
 </style>

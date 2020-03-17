@@ -41,7 +41,7 @@
             value="name"
             @click="selectTest"
           ></b-form-checkbox>-->
-          {{ name }}
+          {{ shortenName }}
           <span class="options" >
             <!-- <label title="Add" @click="showAddChildModal" v-if="children" class="clickable">
               <v-icon name="plus" />
@@ -78,7 +78,7 @@
     >  -->
     <span v-if="children">
       <span 
-        v-for="arr in sortedObjects()"
+        v-for="arr in sortedObjects"
       > 
         <!-- object -->
         <UploadOBTree
@@ -90,11 +90,13 @@
           :isObj="true"
           :parent=name
           type="object"
-          :ref="objectRef(arr[0], file.fileName)"
-          :nameRef="objectRef(arr[0], file.fileName)"
+          :ref="defnRef(arr[0], file.fileName)"
+          :nameRef="defnRef(arr[0], file.fileName)"
           :file="file"
           :isTaxonomyElement="false"
           :subClassedNode="arr[2]"
+          :referenceFile="arr[4]"
+          :isLocal="arr[5]"          
       ></UploadOBTree> 
 
       <!-- taxonomy element -->
@@ -102,16 +104,18 @@
           v-else-if="expandObject && arr[3] == 'TaxonomyElement'"
           :isObj="false"
           :name="arr[0]"
-          :children="subClassChildren(file.file, arr[4], arr[1])"
+          :children="subClassChildren(file.file, arr[4], arr[1], arr[5])"
           :depth="depth + 1"
           :nodeDescription="getNodeDescription(arr[1])"
           :parent=name
           type="object"
-          :ref="objectRef(arr[0], file.fileName)"
-          :nameRef="objectRef(arr[0], file.fileName)"
+          :ref="defnRef(arr[0], file.fileName)"
+          :nameRef="defnRef(arr[0], file.fileName)"
           :file="file"
           :isTaxonomyElement="true"
           :subClassedNode="arr[2]"
+          :referenceFile="arr[5]"
+          :isLocal="arr[6]"          
       >
       </UploadOBTree>
 
@@ -119,17 +123,19 @@
       <UploadOBTree
           v-else-if="expandObject && arr[3] == 'ObjWithInherit'"
           :name="arr[0]"
-          :children="subClassChildren(file.file, arr[4], arr[1])"
+          :children="subClassChildren(file.file, arr[4], arr[1], arr[5])"
           :depth="depth + 1"
           :nodeDescription="getNodeDescription(arr[1])"
           :isObj="true"
           :parent=name
           type="object"
-          :ref="objectRef(arr[0], file.fileName)"
-          :nameRef="objectRef(arr[0], file.fileName)"
+          :ref="defnRef(arr[0], file.fileName)"
+          :nameRef="defnRef(arr[0], file.fileName)"
           :file="file"
           :isTaxonomyElement="false"
           :subClassedNode="arr[2]"
+          :referenceFile="arr[5]"
+          :isLocal="arr[6]"          
       ></UploadOBTree> 
 
       <UploadOBTree
@@ -140,11 +146,13 @@
           :nodeDescription="getNodeDescription(arr[1])"
           :parent="name"
           type="element"
-          :ref="objectRef(arr[0], file.fileName)"
-          :nameRef="objectRef(arr[0], file.fileName)"
+          :ref="defnRef(arr[0], file.fileName)"
+          :nameRef="defnRef(arr[0], file.fileName)"
           :file="file"
           :isTaxonomyElement="false"
           :subClassedNode="arr[2]"
+          :referenceFile="arr[3]"
+          :isLocal="arr[4]"          
       >
       </UploadOBTree>
 
@@ -214,7 +222,7 @@ import * as miscUtilities from "../utils/miscUtilities"
 export default {
   props: ["name", "children", "depth", "expandAllObjects", "parent_name", 
     "nodeDescription", "isObj", "parent", "type", "nameRef", "subClassedNode", 
-    "importedNode", "file", "isTaxonomyElement"
+    "importedNode", "file", "isTaxonomyElement", "referenceFile", "isLocal"
   ],
   name: "UploadOBTree",
   data() {
@@ -237,6 +245,13 @@ export default {
 
   },
   computed: {
+    shortenName() {
+      if (this.name.length > 54) {
+        return this.name.slice(0, 54).concat('...')
+      } else {
+        return this.name
+      }
+    },
     indent() {
       return { "padding-left": `${this.depth * 50}px` };
     },
@@ -246,11 +261,218 @@ export default {
     },
     isSelected() {
       // console.log('is selected computed')
+      // console.log('this.$store.state.nameRef:')
+      // console.log(this.$store.state.nameRef)
+      // console.log('this.nameRef:')
+      // console.log(this.nameRef)
+      
       return this.$store.state.nameRef == this.nameRef;
     },
     toolTipID() {
 
       return "tooltip-id-" + this.name + "-" + this.parent_name;
+    },    
+    sortedObjects() {
+      // console.log('upload OB in sorted objects: ')
+      // console.log(this.children)
+      let obj_lst = []
+      let obj_lst_SC = []
+      let el_lst = []
+      let el_lst_SC = []
+      let superClass_lst = []
+      let subClass_obj = {}
+      let immutable_OB = ["Value", "Unit", "Decimals", "Precision", "TaxonomyElement"]
+      let nodeType = ''
+      let immutable_lst = []
+      let immutable_lst_SC = []
+      let fromSuperClass = false
+      let defnRef = ''
+      let isLocal = true
+      let refFileContext = 'LOCAL'
+      let isTaxonomyElement = false
+
+
+      let fileReference = this.file
+      // console.log('uploadOBTree, sortedObj')
+      // console.log("file, from parent: " + this.name)
+      // console.log(this.file)
+      // if (this.children) {
+      //   console.log('children: ')
+      //   console.log(this.children)
+      // }
+
+      // if (this.name == 'WeatherDataRecord') {
+      //   console.log('in sorted obj (upload ob)')
+      //   console.log(this.children)
+      // }
+      // console.log('sorted obj, all children:')
+      // console.log(this.children)
+
+      if (this.children) {
+          Object.keys(this.children).forEach(key => {
+            // console.log('sorted obj, child key: ' + key + '\nchild obj:')
+            // console.log(this.children[key])
+            isLocal = true
+            fileReference = this.file.file
+            // fileReference = this.children
+            refFileContext = 'LOCAL'
+            isTaxonomyElement = false
+
+            // console.log('#################')
+            // console.log('uploadOB, sortedobj, key')
+            // console.log(key)
+            // console.log('file: ')
+            // console.log(fileReference)
+            // console.log('name')
+            // console.log(this.name)
+            // console.log('children prop')
+            // console.log(this.children)
+            // console.log('~~~')
+
+            if (!this.children[key]["referenceFile"]) {
+              // console.log('1')
+              defnRef = miscUtilities.getDefnRef(fileReference, key, this.name, this.$store.state.loadedFiles, this.children)
+              refFileContext = miscUtilities.getRefFileContext(defnRef)
+              if (refFileContext != 'LOCAL') {
+                // console.log('~~~~~~~~~~~~')
+                // console.log('upload ob, getting file reference: ')
+                // console.log(defnRef)
+                fileReference = this.$store.state.loadedFiles[refFileContext]["file"]
+                isLocal = false
+                // console.log(fileReference)
+              }              
+            } else {
+              // console.log('2')
+              fileReference = this.children[key]["referenceFile"]
+
+              if (!fileReference[key]) {
+                refFileContext = miscUtilities.getRefFileContext(this.children[key]["$ref"])
+                fileReference = this.$store.state.loadedFiles[refFileContext]["file"]
+              }
+
+              isLocal = false
+            }
+
+            // if (this.children[key]["referenceFile"]) {
+            //   console.log('$$$$$$$')
+            //   console.log('children ref file')
+            //   console.log(this.children[key]["referenceFile"])
+            // }
+
+            // console.log('sorted obj, uploadob: defn ref: ' + defnRef)
+            // console.log('sorted obj, uploadob: refFileContext: ' + refFileContext)
+            // console.log('sorted obj, uploadob: referenceFile: ')
+            // console.log(fileReference)
+
+
+
+
+            // console.log('8')
+            fromSuperClass = false
+            superClass_lst = []
+            if ('fromSuperClass' in this.children[key]) {
+              fromSuperClass = true
+            }
+// 
+            // console.log('9')
+
+            // console.log(fileReference)
+            if (fileReference[key]["type"] == "object") {
+              // console.log('uploadOB, sorted obj, in type object')
+                // console.log("object keys and obj")
+                // console.log(key)
+                // console.log(this.children[key])
+                // console.log("-----------")
+                nodeType = "Object"
+                // console.log('~~~~')
+                // console.log('object')
+                // console.log('~~~')
+                if (fromSuperClass) {
+                  if (isLocal) {
+                    obj_lst_SC.push([key, fileReference[key], fromSuperClass, nodeType, fileReference, isLocal])
+                  } else {
+                    obj_lst_SC.push([key, fileReference[key], fromSuperClass, nodeType, fileReference, isLocal])
+                  }
+                } else {
+                  if (isLocal) {
+                    obj_lst.push([key, fileReference[key], fromSuperClass, nodeType, fileReference, isLocal])
+                  } else {
+                    obj_lst.push([key, fileReference[key], fromSuperClass, nodeType, fileReference, isLocal])
+                  }
+                }
+            } else if (fileReference[key]["allOf"]) {
+                // console.log('uploadOB, sorted obj, in type allOf')
+                // console.log('reference file all of obj: ')
+                // console.log(fileReference[key]["allOf"])
+
+                // console.log('~~~~')
+                // console.log('allOf')
+                // console.log('~~~')
+                // console.log('allOf obj: ')
+                // console.log(fileReference[key]["allOf"])
+                for (let i in fileReference[key]["allOf"]) {
+                    // console.log('all of 1')
+                    if (fileReference[key]["allOf"][i]["$ref"]) {
+                        superClass_lst.push(fileReference[key]["allOf"][i]["$ref"])
+                    } else {
+                        subClass_obj = fileReference[key]["allOf"][i]
+                    }
+                }
+                // console.log('uploadob, sorted obj, superclass lst: ')
+                // console.log(superClass_lst)
+                // console.log('check tax elem check on superclass lst: ')
+                // console.log(superClass_lst.includes('#/components/schemas/TaxonomyElement'))
+                nodeType = false
+
+                // check if superclass includes taxonomy element:
+                for (let i in superClass_lst) {
+                  if (superClass_lst[i].includes('#/components/schemas/TaxonomyElement')) {
+                    isTaxonomyElement = true
+                  }
+                }
+
+                if (isTaxonomyElement) {
+                  // console.log('uploadob, sorted obj, is tax elem')
+                  nodeType = 'TaxonomyElement'
+                  if (fromSuperClass) {
+                    el_lst_SC.push([key, subClass_obj, fromSuperClass, nodeType, superClass_lst, fileReference, isLocal])  
+                  } else {
+                    el_lst.push([key, subClass_obj, fromSuperClass, nodeType, superClass_lst, fileReference, isLocal])  
+                  }
+                } else {
+                  // console.log('uploadob, sorted obj, is obj w/ inheritance')
+                  nodeType = 'ObjWithInherit'
+                  if (fromSuperClass) {
+                    obj_lst_SC.push([key, subClass_obj, fromSuperClass, nodeType, superClass_lst, fileReference, isLocal])  
+                  } else {
+                    obj_lst.push([key, subClass_obj, fromSuperClass, nodeType, superClass_lst, fileReference, isLocal])
+                  }
+                }
+                // console.log('all of FIN')
+            } else {
+              // console.log('upload ob, sorted obj, type immutable lst')
+              immutable_lst.push([key, fileReference[key], fromSuperClass, fileReference, isLocal])
+            }
+          })
+
+          obj_lst.sort()
+          obj_lst_SC.sort()
+
+          el_lst.sort()
+          el_lst_SC.sort()
+
+          immutable_lst.sort()
+
+          // if (this.name == 'WeatherDataRecord') {
+          //   console.log('in sorted obj (upload ob)')
+          //   console.log(el_lst.concat(el_lst_SC).concat(obj_lst).concat(obj_lst_SC).concat(immutable_lst))
+          // }
+
+          // console.log('fin uploadOB sortedObjf')
+          // console.log(el_lst.concat(el_lst_SC).concat(obj_lst).concat(obj_lst_SC).concat(immutable_lst))
+
+          return el_lst.concat(el_lst_SC).concat(obj_lst).concat(obj_lst_SC).concat(immutable_lst)
+      } 
     },
   },
   methods: {
@@ -296,6 +518,8 @@ export default {
       this.$store.commit("toggleSelectDefinitionNode")
       this.$store.commit("showDetailedView")
       // console.log(this.file)
+      // console.log('**** Is local? ****')
+      // console.log(this.isLocal)
 
       this.$store.commit({
         type: 'selectNode',
@@ -305,7 +529,10 @@ export default {
         nameRef: this.nameRef,
         nodeDescription: this.nodeDescription,
         isSubClassedNode: this.subClassedNode,
-        isTaxonomyElement: this.isTaxonomyElement
+        isTaxonomyElement: this.isTaxonomyElement,
+        selectedFileName: this.file.fileName,
+        referenceFile: this.referenceFile,
+        isLocal: this.isLocal
       })
       // console.log('toggle select in uploadOBTree: ' + this.parent)
 
@@ -441,103 +668,32 @@ export default {
         return false
       }
     },
-    sortedObjects() {
-      // console.log('in sorted objects: ')
-      // console.log(this.children)
-      let obj_lst = []
-      let obj_lst_SC = []
-      let el_lst = []
-      let el_lst_SC = []
-      let superClass_lst = []
-      let subClass_obj = {}
-      let immutable_OB = ["Value", "Unit", "Decimals", "Precision", "TaxonomyElement"]
-      let nodeType = ''
-      let immutable_lst = []
-      let immutable_lst_SC = []
-      let fromSuperClass = false
-
-      if (this.name == 'WeatherDataRecord') {
-        console.log('in sorted obj (upload ob)')
-        console.log(this.children)
-      }
-
-      if (this.children) {
-          Object.keys(this.children).forEach(key => {
-            // console.log('key')
-            // console.log(key)
-            // console.log('~~~')
-            fromSuperClass = false
-            superClass_lst = []
-            if ('fromSuperClass' in this.children[key]) {
-              fromSuperClass = true
-            }
-            if (this.file.file[key]["type"] == "object") {
-                // console.log("object keys and obj")
-                // console.log(key)
-                // console.log(this.children[key])
-                // console.log("-----------")
-                nodeType = "Object"
-                // console.log('object')
-                // console.log('~~~')
-                if (fromSuperClass) {
-                  obj_lst_SC.push([key, this.file.file[key], fromSuperClass, nodeType])
-                } else {
-                  obj_lst.push([key, this.file.file[key], fromSuperClass, nodeType])
-                }
-            } else if (this.file.file[key]["allOf"]) {
-                // console.log('allOf')
-                // console.log('~~~')
-                for (let i in this.file.file[key]["allOf"]) {
-                    if (this.file.file[key]["allOf"][i]["$ref"]) {
-                        superClass_lst.push(this.file.file[key]["allOf"][i]["$ref"])
-                    } else {
-                        subClass_obj = this.file.file[key]["allOf"][i]
-                    }
-                }
-                nodeType = false
-                if (superClass_lst.includes('#/components/schemas/TaxonomyElement')) {
-                    nodeType = 'TaxonomyElement'
-                    if (fromSuperClass) {
-                      el_lst_SC.push([key, subClass_obj, fromSuperClass, nodeType, superClass_lst])  
-                    } else {
-                      el_lst.push([key, subClass_obj, fromSuperClass, nodeType, superClass_lst])  
-                    }
-                } else {
-                    nodeType = 'ObjWithInherit'
-                    if (fromSuperClass) {
-                      obj_lst_SC.push([key, subClass_obj, fromSuperClass, nodeType, superClass_lst])  
-                    } else {
-                      obj_lst.push([key, subClass_obj, fromSuperClass, nodeType, superClass_lst])
-                    }
-                }
-                
-            } else {
-              immutable_lst.push([key, this.file.file[key], fromSuperClass])
-            }
-          })
-
-          obj_lst.sort()
-          obj_lst_SC.sort()
-
-          el_lst.sort()
-          el_lst_SC.sort()
-
-          immutable_lst.sort()
-
-          // if (this.name == 'WeatherDataRecord') {
-          //   console.log('in sorted obj (upload ob)')
-          //   console.log(el_lst.concat(el_lst_SC).concat(obj_lst).concat(obj_lst_SC).concat(immutable_lst))
-          // }
-
-          return el_lst.concat(el_lst_SC).concat(obj_lst).concat(obj_lst_SC).concat(immutable_lst)
-      } 
-    },
     getNodeDescription(nodeObj) {
         return nodeObj["description"]
     },
-    subClassChildren(file, superClassRef, subClassObj) {
-      return miscUtilities.getSuperClassChildren(file, superClassRef, subClassObj)
+    subClassChildren(file, superClassRef, subClassObj, referenceFile) {
+      // console.log('~~~~~')
+      // console.log('subclasschildren, uploadob')
+      // console.log('parent: ' + this.name)
+      // console.log('file: ')
+      // console.log(file)
+      // console.log('superClassRef' + superClassRef)
+      // console.log('subClassObj: ')
+      // console.log(subClassObj)
+      // console.log('referenceFile: ')
+      // console.log(referenceFile)
+      // console.log('~~~~~')
+
+      if (referenceFile) {
+        return miscUtilities.getSuperClassChildren(referenceFile, superClassRef, subClassObj, referenceFile, null, this.$store.state.loadedFiles)
+      } else {
+        return miscUtilities.getSuperClassChildren(file, superClassRef, subClassObj, referenceFile, null, this.$store.state.loadedFiles)
+      }
     },
+    defnRef(nodeName, fileName) {
+      let defnRef = miscUtilities.generateUniqueRef(nodeName, fileName, this.name)
+      return defnRef
+    }
   },
   watch: {
     expandAllObjects() {

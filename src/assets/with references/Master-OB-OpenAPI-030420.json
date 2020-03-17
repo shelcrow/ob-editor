@@ -1,0 +1,423 @@
+{
+  "openapi" : "3.0.0",
+  "info" : {
+    "version" : "1.0.0",
+    "title" : "OB Open API System Health",
+    "description" : "OB Open API Definitions for the Solar Taxonomy System Health Monitoring and Power Performance Test use cases."
+  },
+  "paths" : {},
+  "servers": [],
+  "components" : {
+    "schemas" : {
+      "Product" : {
+        "type" : "object",
+        "properties" : {
+          "ProductName" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ProductName"
+          },
+          "ProductIdentifier" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ProductIdentifier"
+          },
+          "ProductManufacturer" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ProductManufacturer"
+          },
+          "ProductType" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ProductType"
+          }
+        }
+      },
+      "Device" : {
+        "type" : "object",
+        "properties" : {
+          "DeviceIdentifier" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/DeviceIdentifier"
+          },
+          "SerialNumber" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/SerialNumber"
+          },
+          "ProductTypeIdentifier" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ProductTypeIdentifier"
+          },
+          "DeviceMaintenance" : {
+            "$ref" : "#/components/schemas/DeviceMaintenance"
+          }
+        }
+      },
+      "DataRecord" : {
+        "type" : "object",
+        "properties" : {
+          "StartTime" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/StartTime"
+          },
+          "EndTime" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/EndTime"
+          },
+          "DeviceIdentifier" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/DeviceIdentifier"
+          }
+        }
+      },
+      "DeviceMaintenance" : {
+        "type" : "object",
+        "properties" : {
+          "MaintenanceDateLast" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/MaintenanceDateLast"
+          },
+          "CalibrationDateLast" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/CalibrationDateLast"
+          },
+          "CalibrationMethod" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/CalibrationMethod"
+          }
+        }
+      },
+      "WeatherInstrumentDevice" : {
+        "type" : "object",
+        "properties" : {
+          "AccuracyClass" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/AccuracyClass"
+          },
+          "CalibrationInterval" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/CalibrationInterval"
+          },
+          "PVSystemIdentifier" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/PVSystemIdentifier"
+          },
+          "PurchaseDate" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/PurchaseDate"
+          },
+          "DeviceCost" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/DeviceCost"
+          },
+          "ManufactureDate" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ManufactureDate"
+          },
+          "ManualLink" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ManualLink"
+          },
+          "DeviceWarranty" : {
+            "$ref" : "#/components/schemas/DeviceWarranty"
+          },
+          "OrientationInformation" : {
+            "$ref" : "#/components/schemas/OrientationInformation"
+          }
+        }
+      },
+      "DeviceWarranty" : {
+        "type" : "object",
+        "properties" : {
+          "EquipmentTypeWarrantyOutput" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/EquipmentTypeWarrantyOutput"
+          },
+          "EquipmentTypeWarrantyStartDateMilestone" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/EquipmentTypeWarrantyStartDateMilestone"
+          },
+          "EquipmentTypeWarranty" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/EquipmentTypeWarranty"
+          },
+          "EquipmentTypeWarrantyTerm" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/EquipmentTypeWarrantyTerm"
+          },
+          "EquipmentTypeWarrantyStartDate" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/EquipmentTypeWarrantyStartDate"
+          },
+          "EquipmentTypeWarrantyEndDate" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/EquipmentTypeWarrantyEndDate"
+          },
+          "ModulePerformanceWarrantyEndDate" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ModulePerformanceWarrantyEndDate"
+          },
+          "ModulePerformanceWarrantyGuaranteedOutput" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ModulePerformanceWarrantyGuaranteedOutput"
+          },
+          "ModuleMaterialsAndWorkmanShipWarrantyInitiationDate" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ModuleMaterialsAndWorkmanShipWarrantyInitiationDate"
+          },
+          "TrackerMaterialsWorkmanshipWarrantyExpiration" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/TrackerMaterialsWorkmanshipWarrantyExpiration"
+          },
+          "TrackerMaterialsWorkmanshipWarrantyInitiation" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/TrackerMaterialsWorkmanshipWarrantyInitiation"
+          }
+        }
+      },
+      "MeterProduct" : {
+        "type" : "object",
+        "properties" : {
+          "RevenueGrade" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/RevenueGrade"
+          },
+          "MeasurementScope" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/MeasurementScope"
+          }
+        }
+      },
+      "MeterDevice" : {
+        "type" : "object",
+        "properties" : {
+          "CurrentTransducerRatio" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/CurrentTransducerRatio"
+          }
+        }
+      },
+      "OrientationInformation" : {
+        "type" : "object",
+        "properties" : {
+          "OrientationAzimuth" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/OrientationAzimuth"
+          },
+          "OrientationTilt" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/OrientationTilt"
+          },
+          "HeightAboveGround" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/HeightAboveGround"
+          }
+        }
+      },
+      "WeatherDataRecord" : {
+        "type" : "object",
+        "properties" : {
+          "IrradianceDirectNormal" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/IrradianceDirectNormal"
+          },
+          "IrradianceDiffuseHorizontal" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/IrradianceDiffuseHorizontal"
+          },
+          "IrradiancePlaneOfArray" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/IrradiancePlaneOfArray"
+          },
+          "IrradianceGlobalHorizontal" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/IrradianceGlobalHorizontal"
+          },
+          "TemperatureAmbient" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/TemperatureAmbient"
+          },
+          "WindSpeed" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/WindSpeed"
+          },
+          "HumidityRelative" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/HumidityRelative"
+          },
+          "PressureAtmospheric" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/PressureAtmospheric"
+          },
+          "Rainfall" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/Rainfall"
+          },
+          "Snowfall" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/Snowfall"
+          },
+          "PrecipitationType" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/PrecipitationType"
+          },
+          "Albedo" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/Albedo"
+          },
+          "SnowAccumulation" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/SnowAccumulation"
+          },
+          "ReferenceCellMeasurement" : {
+            "$ref" : "#/components/schemas/ReferenceCellMeasurement"
+          }
+        }
+      },
+      "ReferenceCellMeasurement" : {
+        "type" : "object",
+        "properties" : {
+          "TemperatureReferenceCell" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/TemperatureReferenceCell"
+          },
+          "CurrentShortCircuit" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/CurrentShortCircuit"
+          },
+          "VoltageOpenCircuit" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/VoltageOpenCircuit"
+          },
+          "CurrentMaximumPower" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/CurrentMaximumPower"
+          },
+          "VoltageMaximumPower" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/VoltageMaximumPower"
+          }
+        }
+      },
+      "PowerMeasurements" : {
+        "type" : "object",
+        "properties" : {
+          "PowerAC" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/PowerAC"
+          },
+          "PowerDC" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/PowerDC"
+          },
+          "EnergyAC" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/EnergyAC"
+          },
+          "TemperatureMeter" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/TemperatureMeter"
+          },
+          "TemperatureModule" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/TemperatureModule"
+          },
+          "TemperatureCell" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/TemperatureCell"
+          },
+          "CurtailmentLimit" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/CurtailmentLimit"
+          },
+          "Availability" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/Availability"
+          },
+          "SystemPowerFactor" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/SystemPowerFactor"
+          }
+        }
+      },
+      "SoilingInstrumentDevice" : {
+        "type" : "object",
+        "properties" : {
+          "SoilingInstrumentType" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/SoilingInstrumentType"
+          },
+          "OrientationAzimuth" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/OrientationAzimuth"
+          },
+          "OrientationTilt" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/OrientationTilt"
+          },
+          "CalibrationDateLast" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/CalibrationDateLast"
+          },
+          "MaintenanceDateLast" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/MaintenanceDateLast"
+          }
+        }
+      },
+      "ASTME2848ReportingConditions" : {
+        "type" : "object",
+        "properties" : {
+          "IrradiancePlaneOfArray" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/IrradiancePlaneOfArray"
+          },
+          "TemperatureAmbient" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/TemperatureAmbient"
+          },
+          "WindSpeed" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/WindSpeed"
+          },
+          "ReferenceCellCalibrationConstantAtReportingCondition" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ReferenceCellCalibrationConstantAtReportingCondition"
+          }
+        }
+      },
+      "ASTME2848DataRecord" : {
+        "type" : "object",
+        "properties" : {
+          "IrradiancePlaneOfArray" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/IrradiancePlaneOfArray"
+          },
+          "TemperatureAmbient" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/TemperatureAmbient"
+          },
+          "WindSpeed" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/WindSpeed"
+          },
+          "DataSelected" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/DataSelected"
+          },
+          "DataFilterVisual" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/DataFilterVisual"
+          },
+          "DataFilterOutliers" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/DataFilterOutliers"
+          },
+          "DataFilterMissing" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/DataFilterMissing"
+          },
+          "DataFilterCollectionSystem" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/DataFilterCollectionSystem"
+          },
+          "DataFilterOutsideRange" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/DataFilterOutsideRange"
+          },
+          "DataFilterStability" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/DataFilterStability"
+          },
+          "DataFilterInverterClipping" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/DataFilterInverterClipping"
+          },
+          "DataFilterShading" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/DataFilterShading"
+          },
+          "DataFilterInstrumentAlignment" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/DataFilterInstrumentAlignment"
+          }
+        }
+      },
+      "DataFilterCriteria" : {
+        "type" : "object",
+        "properties" : {
+          "FilterIrradianceMaximum" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/FilterIrradianceMaximum"
+          },
+          "FilterIrradianceMinimum" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/FilterIrradianceMinimum"
+          },
+          "FilterTemperatureAmbientMaximum" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/FilterTemperatureAmbientMaximum"
+          },
+          "FilterTemperatureAmbientMinimum" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/FilterTemperatureAmbientMinimum"
+          },
+          "FilterWindSpeedMaximum" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/FilterWindSpeedMaximum"
+          },
+          "FilterWindSpeedMinimum" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/FilterWindSpeedMinimum"
+          },
+          "FilterPowerACMaximum" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/FilterPowerACMaximum"
+          },
+          "FilterPowerACMinimum" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/FilterPowerACMinimum"
+          },
+          "FilterIrradianceStabilityMaximum" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/FilterIrradianceStabilityMaximum"
+          },
+          "FilterIrradianceStabilityWindowLength" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/FilterIrradianceStabilityWindowLength"
+          }
+        }
+      },
+      "ASTME2848Model" : {
+        "type" : "object",
+        "properties" : {
+          "ASTME28484ModelCoefficientA1" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ASTME28484ModelCoefficientA1"
+          },
+          "ASTME28484ModelCoefficientA2" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ASTME28484ModelCoefficientA2"
+          },
+          "ASTME28484ModelCoefficientA3" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ASTME28484ModelCoefficientA3"
+          },
+          "ASTME28484ModelCoefficientA4" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ASTME28484ModelCoefficientA4"
+          },
+          "ASTME2848PowerRatingAtReportingCondition" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ASTME2848PowerRatingAtReportingCondition"
+          },
+          "ASTME2848PowerRatingUncertainty" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ASTME2848PowerRatingUncertainty"
+          },
+          "ASTME2848ModelResidualMean" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ASTME2848ModelResidualMean"
+          },
+          "ASTME2848ModelResidualStandardDeviation" : {
+            "$ref" : "Master-Solar-Taxonomy-030420.json#/components/schemas/ASTME2848ModelResidualStandardDeviation"
+          }
+        }
+      }
+    }
+  }
+}

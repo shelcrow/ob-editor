@@ -3,17 +3,20 @@ Component for removing enumeration from definitions
 -->
 
 <template>
-    <div class="remove-enum-container">
-        <p>Enumerations: </p>
-        <div class="enum-list">
-            <li v-for="(_enum, index) in sortedEnumList" @click="enumSelect(_enum, index)" class="enum-in-enum-list" :class="{'selected-node': index == selectedIndex}">
-                {{ _enum }}
-            </li>            
+    <div class="editor-function-container">
+        <div class="editor-function-body-container">
+            <p>Enumerations: </p>
+            <div class="enum-list">
+                <li v-for="(_enum, index) in sortedEnumList" @click="enumSelect(_enum, index)" class="enum-in-enum-list" :class="{'selected-node': index == selectedIndex}">
+                    {{ _enum }}
+                </li>            
+            </div>            
         </div>
-        <div class="remove-button-container">
-            <b-button variant="danger" @click="removeEnum">
+        <div class="editor-function-footer-container">
+            <b-button variant="danger" @click="removeEnum" size="sm">
                 Remove
             </b-button>
+            <b-button @click="goPreviousView" size="sm">Cancel</b-button>
         </div>
     </div>
 </template>
@@ -34,7 +37,10 @@ export default {
         removeEnum() {
             this.$store.commit("removeEnumFromObject", this.selectedEnum)
             this.selectedIndex = null
-        }
+        },
+        goPreviousView() {
+            this.$store.state.activeEditingView = 'EditDefinitionFormDisabled'
+        },        
     },
     computed: {
         sortedEnumList() {
@@ -71,6 +77,11 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.remove-enum-container {
+    padding-left: 15px;
+    padding-right: 15px;
 }
 </style>
 
