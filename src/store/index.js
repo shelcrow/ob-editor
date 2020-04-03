@@ -1,7 +1,7 @@
 import Vue from "vue";
 import Vuex from "vuex";
-import * as JSONEditor from '../utils/JSONEditor.js'
-import FileSaver from "file-saver"
+import * as JSONEditor from "../utils/JSONEditor.js";
+import FileSaver from "file-saver";
 
 Vue.use(Vuex);
 
@@ -25,23 +25,21 @@ export default new Vuex.Store({
     selectDefinitionNode: false,
     showCreateDefinitionForm: false,
     showLoadInDefinitionForm: false,
-    nodeToAddToObject: '',
-    nodeToAddListType: '',
-    superClassToRemoveFromObject: '',
+    nodeToAddToObject: "",
+    nodeToAddListType: "",
+    superClassToRemoveFromObject: "",
     refreshCreateDefn: false,
     isSubClassedNode: false,
 
     // tracks whether exportModal has been opened, needed so a watcher can reset the export form.
     exportModalOpened: false,
-    xbrlFile: XBRLFile,
     xbrlFlat: [],
 
     //tracks whether you are in the OAS tab or the XBRL tab
     inOASTab: true,
     inXBRLTab: false,
 
-    treeSearchTerm: '',
-
+    treeSearchTerm: "",
 
     //tabs update
     fileTabs: [],
@@ -55,198 +53,200 @@ export default new Vuex.Store({
 
     masterFiles: {},
     loadedFiles: {},
-    selectedFileName: '',
+    selectedFileName: "",
     selectedDefnRefFile: null,
 
     defnIsLocal: null,
 
-    activeEditingView: 'EditDefinitionFormDisabled',
+    activeEditingView: "EditDefinitionFormDisabled",
 
     // after abbrev update
 
-    nodeOBType: '',
-    nodeOBUnit: '',
-    nodeOBEnum: '',
+    nodeOBType: "",
+    nodeOBUnit: "",
+    nodeOBEnum: ""
   },
   mutations: {
     /* 
       Add enumeration to object
     */
     addEnumToObject(state, _enum) {
-      JSONEditor.addEnum(state.currentFile.file, state.isSelected, _enum)
-      state.nodeEnum = state.currentFile.file[state.isSelected]["enum"]
+      JSONEditor.addEnum(state.currentFile.file, state.isSelected, _enum);
+      state.nodeEnum = state.currentFile.file[state.isSelected]["enum"];
       for (let i in state.currentFile.file[state.isSelected]["allOf"]) {
         if (state.currentFile.file[state.isSelected]["allOf"][i]["type"]) {
           if (state.currentFile.file[state.isSelected]["allOf"][i]["enum"]) {
-            state.nodeEnum = state.currentFile.file[state.isSelected]["allOf"][i]["enum"]
-          } 
+            state.nodeEnum =
+              state.currentFile.file[state.isSelected]["allOf"][i]["enum"];
+          }
         }
-      }   
+      }
     },
 
     /*
       Remove enumeration from object
     */
     removeEnumFromObject(state, _enum) {
-      JSONEditor.removeEnum(state.currentFile.file, state.isSelected, _enum)
+      JSONEditor.removeEnum(state.currentFile.file, state.isSelected, _enum);
 
       //check if empty enum array to set nodeEnum to null, will not react automatically for some reason
       for (let i in state.currentFile.file[state.isSelected]["allOf"]) {
         if (state.currentFile.file[state.isSelected]["allOf"][i]["type"]) {
           if (!state.currentFile.file[state.isSelected]["allOf"][i]["enum"]) {
-            state.nodeEnum = null
+            state.nodeEnum = null;
           }
         }
-      }  
-      // if (!state.currentFile.file[state.isSelected]["enum"]) {
-      //   state.nodeEnum = null
-      // }
+      }
     },
 
     /*
       Add member to object
     */
     addNodeToObject(state, payload) {
-      // let memberObj = {}
-      // memberObj["$ref"] = "#/components/schemas/" + payload.memberName
-      // // console.log(payload.memberName)
-      // // console.log(memberObj)
-      // // console.log(payload)
-      // // console.log('addNodeToObject, store: ')
-      // // console.log(payload)
+      let parentDefnName = payload.parentName;
+      let childDefnName = payload.defnToAddName;
+      let childRefFile = state.loadedFiles[payload.referenceFileName];
+      let workingFile = state.currentFile;
 
-      let parentDefnName = payload.parentName
-      let childDefnName = payload.defnToAddName
-      let childRefFile = state.loadedFiles[payload.referenceFileName]
-      let workingFile = state.currentFile
-
-
-
-      JSONEditor.addChildToObject(workingFile, parentDefnName, childDefnName, childRefFile)
+      JSONEditor.addChildToObject(
+        workingFile,
+        parentDefnName,
+        childDefnName,
+        childRefFile
+      );
     },
-    
+
     /*
       Edit definition 
     */
     editNode(state, payload) {
-      JSONEditor.editNode(state.currentFile.file, payload.nodeName, payload.nodeDescription)
-      state.nodeDescription = payload.nodeDescription
+      JSONEditor.editNode(
+        state.currentFile.file,
+        payload.nodeName,
+        payload.nodeDescription
+      );
+      state.nodeDescription = payload.nodeDescription;
     },
 
     /*
       Add Inheritance
     */
     addSuperClass(state, payload) {
+      let workingFile = state.currentFile.file;
+      let subClassName = state.isSelected;
+      let superClassName = payload.superClassName;
+      let superClassRefFileName = payload.superClassRefFileName;
 
-      let workingFile = state.currentFile.file
-      let subClassName = state.isSelected
-      let superClassName = payload.superClassName
-      let superClassRefFileName = payload.superClassRefFileName
-      
-      JSONEditor.addSuperClass(workingFile, subClassName, superClassName, superClassRefFileName, state.loadedFiles)
+      JSONEditor.addSuperClass(
+        workingFile,
+        subClassName,
+        superClassName,
+        superClassRefFileName,
+        state.loadedFiles
+      );
     },
 
     /*
       Remove Inheritance
     */
     removeSuperClass(state, superClassName) {
-      JSONEditor.removeSuperClass(state.currentFile.file, state.isSelected, superClassName)
+      JSONEditor.removeSuperClass(
+        state.currentFile.file,
+        state.isSelected,
+        superClassName
+      );
     },
 
     /*
       Tree view handling
     */
     toggleSelectDefinitionNode(state) {
-      state.selectDefinitionNode = false
+      state.selectDefinitionNode = false;
     },
     selectNode(state, payload) {
-      // console.log('store: selectNode')
-      // console.log(payload)
       state.isSelected = payload.nodeName;
       state.nodeName = payload.nodeName;
-      state.nodeParent = payload.nodeParent
-      // state.nodeType = payload.nodeType;
-      // all visualized elements / objects are "objects":
-      state.nodeType = payload.nodeType
-      state.nodeDescription = payload.nodeDescription
-      state.nameRef = payload.nameRef
-      state.isSubClassedNode = payload.isSubClassedNode
-      state.isTaxonomyElement = payload.isTaxonomyElement
-      state.selectedFileName = payload.selectedFileName
-      state.defnIsLocal = payload.isLocal
+      state.nodeParent = payload.nodeParent;
 
-      // console.log(payload.isSubClassedNode)
-      // console.log('selectNode in store: ')
-      // console.log(state.nodeParent)
+      state.nodeType = payload.nodeType;
+      state.nodeDescription = payload.nodeDescription;
+      state.nameRef = payload.nameRef;
+      state.isSubClassedNode = payload.isSubClassedNode;
+      state.isTaxonomyElement = payload.isTaxonomyElement;
+      state.selectedFileName = payload.selectedFileName;
+      state.defnIsLocal = payload.isLocal;
 
-      state.selectedDefnRefFile = payload.referenceFile
-      // console.log('does this reset view')
-      state.activeEditingView = 'EditDefinitionFormDisabled'
-      
+      state.selectedDefnRefFile = payload.referenceFile;
+      state.activeEditingView = "EditDefinitionFormDisabled";
 
       if (state.selectedDefnRefFile[state.isSelected]["allOf"]) {
         for (let i in state.selectedDefnRefFile[state.isSelected]["allOf"]) {
           if (state.selectedDefnRefFile[state.isSelected]["allOf"][i]["type"]) {
-
-            if (state.selectedDefnRefFile[state.isSelected]["allOf"][i]["enum"]) {
-              state.nodeEnum = state.selectedDefnRefFile[state.isSelected]["allOf"][i]["enum"]
+            if (
+              state.selectedDefnRefFile[state.isSelected]["allOf"][i]["enum"]
+            ) {
+              state.nodeEnum =
+                state.selectedDefnRefFile[state.isSelected]["allOf"][i]["enum"];
             } else {
-              state.nodeEnum = null
+              state.nodeEnum = null;
             }
 
-            if (state.selectedDefnRefFile[state.isSelected]["allOf"][i]["x-ob-item-type"]) {
-              state.nodeOBType = state.selectedDefnRefFile[state.isSelected]["allOf"][i]["x-ob-item-type"]
+            if (
+              state.selectedDefnRefFile[state.isSelected]["allOf"][i][
+                "x-ob-item-type"
+              ]
+            ) {
+              state.nodeOBType =
+                state.selectedDefnRefFile[state.isSelected]["allOf"][i][
+                  "x-ob-item-type"
+                ];
             } else {
-              state.nodeOBType = ''
+              state.nodeOBType = "";
             }
 
-            if (state.selectedDefnRefFile[state.isSelected]["allOf"][i]["x-ob-unit"]) {
-              state.nodeOBUnit = state.selectedDefnRefFile[state.isSelected]["allOf"][i]["x-ob-unit"]
+            if (
+              state.selectedDefnRefFile[state.isSelected]["allOf"][i][
+                "x-ob-unit"
+              ]
+            ) {
+              state.nodeOBUnit =
+                state.selectedDefnRefFile[state.isSelected]["allOf"][i][
+                  "x-ob-unit"
+                ];
             } else {
-              state.nodeOBUnit = ''
+              state.nodeOBUnit = "";
             }
 
-            if (state.selectedDefnRefFile[state.isSelected]["allOf"][i]["x-ob-enum"]) {
-              state.nodeOBEnum = state.selectedDefnRefFile[state.isSelected]["allOf"][i]["x-ob-enum"]
+            if (
+              state.selectedDefnRefFile[state.isSelected]["allOf"][i][
+                "x-ob-enum"
+              ]
+            ) {
+              state.nodeOBEnum =
+                state.selectedDefnRefFile[state.isSelected]["allOf"][i][
+                  "x-ob-enum"
+                ];
             } else {
-              state.nodeOBEnum = ''
+              state.nodeOBEnum = "";
             }
-
           }
-        }   
+        }
       } else {
-        state.nodeEnum = null
-        state.nodeOBEnum = ''
-        state.nodeOBType = ''
-        state.nodeOBUnit = ''
+        state.nodeEnum = null;
+        state.nodeOBEnum = "";
+        state.nodeOBType = "";
+        state.nodeOBUnit = "";
       }
-
-      // if (state.currentFile.file[state.isSelected]["enum"]) {
-      //   state.nodeEnum = state.currentFile.file[state.isSelected]["enum"]
-      // } else {
-      //   state.nodeEnum = null
-      // }
-
-      // don't need loop if referencing top level, can just directly access with key to get value(s)
-      // if (payload.nodeType == 'element') {
-      //   Object.keys(state.currentFile.file).forEach(key => {
-      //     if (key == state.nodeName) {
-      //       state.nodeDataType = state.currentFile.file[key]["type"]
-      //       state.nodeDescription = state.currentFile.file[key]["description"]
-      //     }
-      //   })
-      // }
-
     },
 
     /*
       Editor view handling
     */
     showDetailedView(state) {
-      state.showEditNodeView = false
-      state.showDetailedView = true
-      state.showCreateDefinitionForm = false
-      state.showLoadInDefinitionForm = false
+      state.showEditNodeView = false;
+      state.showDetailedView = true;
+      state.showCreateDefinitionForm = false;
+      state.showLoadInDefinitionForm = false;
     },
 
     /* 
@@ -257,213 +257,235 @@ export default new Vuex.Store({
       // schemaFile is used for referencing the schema object in uploadedOASFileOriginal
       // schemaFile is used for referencing the definition object in schema in uploadedOASFileOriginal
 
-      state.uploadedOASFileOriginal = JSON.parse(json_str)
-      state.schemaFile = state.uploadedOASFileOriginal.components.schemas
+      state.uploadedOASFileOriginal = JSON.parse(json_str);
+      state.schemaFile = state.uploadedOASFileOriginal.components.schemas;
 
       // replace all instances of schemaFile with schemaFile. schemaFile is no longer needed as we took out the definition obj.
       // state.schemaFile = state.schemaFile
-      JSONEditor.createArrayOfAllElementDefinitions(state.schemaFile, state.listOfDefinitionElements)
+      JSONEditor.createArrayOfAllElementDefinitions(
+        state.schemaFile,
+        state.listOfDefinitionElements
+      );
     },
-    deleteNode(state,payload) {
-      // console.log('node name: ' + payload.nodeName)
-      // console.log('parent name: ' + payload.parent)
-      if (state.nodeParent == 'root') {
-        // console.log(1)
-        JSONEditor.deleteAllNodes(payload.currentFile, state.nodeName)
+    deleteNode(state, payload) {
+      if (state.nodeParent == "root") {
+        JSONEditor.deleteAllNodes(payload.currentFile, state.nodeName);
       } else {
-        // console.log(22)
-        JSONEditor.deleteNode(payload.currentFile, payload.nodeName, payload.parent)
+        JSONEditor.deleteNode(
+          payload.currentFile,
+          payload.nodeName,
+          payload.parent
+        );
       }
     },
     toggleSelectNode(state) {
-      state.isSelected = false
+      state.isSelected = false;
     },
     showEditNodeView(state) {
-      state.showDetailedView = false
-      state.showEditNodeView = true
-      state.selectDefinitionNode = true
+      state.showDetailedView = false;
+      state.showEditNodeView = true;
+      state.selectDefinitionNode = true;
     },
 
     showCreateDefinitionForm(state) {
-      state.showCreateDefinitionForm = true
-      state.showDetailedView = false
-      state.showCreateNodeObjectView = false    
-      state.showEditNodeView = false
-      state.showLoadInDefinitionForm = false
-
+      state.showCreateDefinitionForm = true;
+      state.showDetailedView = false;
+      state.showCreateNodeObjectView = false;
+      state.showEditNodeView = false;
+      state.showLoadInDefinitionForm = false;
     },
     showLoadInDefinitionForm(state) {
-      state.showLoadInDefinitionForm = true
-      state.showDetailedView = false
-      state.showCreateNodeObjectView = false
-      state.showEditNodeView = false
-      state.showCreateDefinitionForm = false
+      state.showLoadInDefinitionForm = true;
+      state.showDetailedView = false;
+      state.showCreateNodeObjectView = false;
+      state.showEditNodeView = false;
+      state.showCreateDefinitionForm = false;
     },
     createNodeElement(state, payload) {
-      // JSONEditor.createNodeElement(state.schemaFile, payload.nodeName, payload.nodeType, payload.nodeElementDescription)
       let node_attr = {
-        "type": payload.nodeType,
-        "description": payload.nodeElementDescription
-      }
-      Vue.set(state.schemaFile.definitions.properties, payload.nodeName, node_attr)
+        type: payload.nodeType,
+        description: payload.nodeElementDescription
+      };
+      Vue.set(
+        state.schemaFile.definitions.properties,
+        payload.nodeName,
+        node_attr
+      );
     },
     exportFile(state, payload) {
-      // Vue.set(state.currentFile.file, "info", payload.info )
-      let jsonFileToExport = new Blob([JSON.stringify(state.currentFile.fullFileForExport, null, 4)], { type: "application/json" })
-      FileSaver.saveAs(jsonFileToExport, payload.filename + ".json")
+      let jsonFileToExport = new Blob(
+        [JSON.stringify(state.currentFile.fullFileForExport, null, 4)],
+        { type: "application/json" }
+      );
+      FileSaver.saveAs(jsonFileToExport, payload.filename + ".json");
     },
     selectNone(state) {
-      state.isSelected = null
-      state.nodeName = null
-      state.nodeType = null
-      state.nodeDescription = null
-      state.nameRef = null
+      state.isSelected = null;
+      state.nodeName = null;
+      state.nodeType = null;
+      state.nodeDescription = null;
+      state.nameRef = null;
     },
     createNodeObject(state, payload) {
-      JSONEditor.createNodeObject(state.schemaFile, payload.objectName, payload.objectDescription, payload.elementForms)
+      JSONEditor.createNodeObject(
+        state.schemaFile,
+        payload.objectName,
+        payload.objectDescription,
+        payload.elementForms
+      );
     },
 
     createDefinition(state, payload) {
-      let defn_attr = {}
+      let defn_attr = {};
 
-      if (payload.definitionType == 'OB Object') {
+      if (payload.definitionType == "OB Object") {
         defn_attr = {
-          "type": "object",
-          "description": payload.definitionDescription,
-          "properties": {}
-        }
-      } else if (payload.definitionType == 'OB Taxonomy Element String') {
+          type: "object",
+          description: payload.definitionDescription,
+          properties: {}
+        };
+      } else if (payload.definitionType == "OB Taxonomy Element String") {
         defn_attr = {
-          "allOf": [
+          allOf: [
             {
-                "$ref": "Master-Solar-Taxonomy-040120.json#/components/schemas/TaxonomyElementString"
+              $ref:
+                "Master-Solar-Taxonomy-040120.json#/components/schemas/TaxonomyElementString"
             },
             {
-                "type": "object",
-                "description": payload.definitionDescription,
-                "x-ob-item-type": payload.OBItemType,
-                "x-ob-unit": payload.OBUnits,
-                "x-ob-enum": payload.OBEnum
+              type: "object",
+              description: payload.definitionDescription,
+              "x-ob-item-type": payload.OBItemType,
+              "x-ob-unit": payload.OBUnits,
+              "x-ob-enum": payload.OBEnum
             }
           ]
-        }
-      } else if (payload.definitionType == 'OB Taxonomy Element Number') {
+        };
+      } else if (payload.definitionType == "OB Taxonomy Element Number") {
         defn_attr = {
-          "allOf": [
+          allOf: [
             {
-                "$ref": "Master-Solar-Taxonomy-040120.json#/components/schemas/TaxonomyElementNumber"
+              $ref:
+                "Master-Solar-Taxonomy-040120.json#/components/schemas/TaxonomyElementNumber"
             },
             {
-                "type": "object",
-                "description": payload.definitionDescription,
-                "x-ob-item-type": payload.OBItemType,
-                "x-ob-unit": payload.OBUnits,
-                "x-ob-enum": payload.OBEnum
+              type: "object",
+              description: payload.definitionDescription,
+              "x-ob-item-type": payload.OBItemType,
+              "x-ob-unit": payload.OBUnits,
+              "x-ob-enum": payload.OBEnum
             }
           ]
-        }
-      } else if (payload.definitionType == 'OB Taxonomy Element Integer') {
+        };
+      } else if (payload.definitionType == "OB Taxonomy Element Integer") {
         defn_attr = {
-          "allOf": [
+          allOf: [
             {
-                "$ref": "Master-Solar-Taxonomy-040120.json#/components/schemas/TaxonomyElementInteger"
+              $ref:
+                "Master-Solar-Taxonomy-040120.json#/components/schemas/TaxonomyElementInteger"
             },
             {
-                "type": "object",
-                "description": payload.definitionDescription,
-                "x-ob-item-type": payload.OBItemType,
-                "x-ob-unit": payload.OBUnits,
-                "x-ob-enum": payload.OBEnum
+              type: "object",
+              description: payload.definitionDescription,
+              "x-ob-item-type": payload.OBItemType,
+              "x-ob-unit": payload.OBUnits,
+              "x-ob-enum": payload.OBEnum
             }
           ]
-        }
-      } else if (payload.definitionType == 'OB Taxonomy Element Boolean') {
+        };
+      } else if (payload.definitionType == "OB Taxonomy Element Boolean") {
         defn_attr = {
-          "allOf": [
+          allOf: [
             {
-                "$ref": "Master-Solar-Taxonomy-040120.json#/components/schemas/TaxonomyElementBoolean"
+              $ref:
+                "Master-Solar-Taxonomy-040120.json#/components/schemas/TaxonomyElementBoolean"
             },
             {
-                "type": "object",
-                "description": payload.definitionDescription,
-                "x-ob-item-type": payload.OBItemType,
-                "x-ob-unit": payload.OBUnits,
-                "x-ob-enum": payload.OBEnum
+              type: "object",
+              description: payload.definitionDescription,
+              "x-ob-item-type": payload.OBItemType,
+              "x-ob-unit": payload.OBUnits,
+              "x-ob-enum": payload.OBEnum
             }
           ]
-        }
-      } else if (payload.definitionType == 'OB Array') {
+        };
+      } else if (payload.definitionType == "OB Array") {
         defn_attr = {
-          "type": "array",
-          "items" : {
-            "$ref" : payload.arrayItemFileName + "#/components/schemas/" + payload.arrayItemDefnName
+          type: "array",
+          items: {
+            $ref:
+              payload.arrayItemFileName +
+              "#/components/schemas/" +
+              payload.arrayItemDefnName
           }
-        }
+        };
       }
 
-      Vue.set(state.currentFile.file, payload.definitionName, defn_attr)
+      Vue.set(state.currentFile.file, payload.definitionName, defn_attr);
     },
     // Refreshes form inputs when trying to hit add definition after already adding a defn
     refreshCreateDefnInputs(state, refreshBool) {
-      state.refreshCreateDefn = refreshBool
+      state.refreshCreateDefn = refreshBool;
     },
     toggleExportModal(state) {
-      state.exportModalOpened = !state.exportModalOpened
+      state.exportModalOpened = !state.exportModalOpened;
     },
     clearEditorView(state) {
-      state.showDetailedView = false
-      state.showEditNodeView = false
-      state.showCreateDefinitionForm = false
-      state.isSelected = null
-      state.nameRef = null
+      state.showDetailedView = false;
+      state.showEditNodeView = false;
+      state.showCreateDefinitionForm = false;
+      state.isSelected = null;
+      state.nameRef = null;
     },
-    // createNewFile(state, payload) {
-    //   let newFileJSON = JSONEditor.createNewDefnFile(payload.newFileTitle, payload.newFileDescription, payload.newFileFileName)
-    //   // console.log(newFileJSON)
-    // }
 
     // when user loads in a file, it is put into the loadedFile object
     // problem: what if someone loads in a file, references it in a new fiile, then unloads the old file. now the new file cant reference the old
     loadFile(state, file) {
-      state.loadedFiles[file.fileName] = file
-
-      // console.log('loadedFiles')
-      // console.log(state.loadedFiles)
-
+      state.loadedFiles[file.fileName] = file;
     },
     removeFile(state, fileName) {
-      if (!(fileName == 'Master-Solar-Taxonomy-040120.json' || fileName == 'Master-OB-OpenAPI-030420.json')) {
-        delete state.loadedFiles[fileName]
+      if (
+        !(
+          fileName == "Master-Solar-Taxonomy-040120.json" ||
+          fileName == "Master-OB-OpenAPI-030420.json"
+        )
+      ) {
+        delete state.loadedFiles[fileName];
       }
     },
     loadInDefinition(state, payload) {
-      let defnName = payload.defnName
-      let defnFile = payload.defnFile
-      let currentFile = state.currentFile.file
-      // console.log('defnName: ' + defnName + '\ndefnFile: ' + defnFile)
-      // console.log('current file: ')
-      // console.log(currentFile)
+      let defnName = payload.defnName;
+      let defnFile = payload.defnFile;
+      let currentFile = state.currentFile.file;
 
-      JSONEditor.loadInDefinition(currentFile, defnName, defnFile)
-
+      JSONEditor.loadInDefinition(currentFile, defnName, defnFile);
     },
     editItemType(state, payload) {
-      console.log(payload)
-      // OBItemType: this.selectedOBItemType,
-      // OBUnits: this.selectedOBUnits,
-      // OBEnum: this.selectedOBEnum      
-      console.log(state.currentFile.file[state.isSelected])
+      console.log(payload);
 
-      state.nodeOBType = payload.OBItemType
-      state.nodeOBUnit = payload.OBUnits
-      state.nodeOBEnum = payload.OBEnum
+      console.log(state.currentFile.file[state.isSelected]);
+
+      state.nodeOBType = payload.OBItemType;
+      state.nodeOBUnit = payload.OBUnits;
+      state.nodeOBEnum = payload.OBEnum;
       for (let i in state.currentFile.file[state.isSelected]["allOf"]) {
         if (state.currentFile.file[state.isSelected]["allOf"][i]["type"]) {
-          Vue.set(state.currentFile.file[state.isSelected]["allOf"][i], "x-ob-item-type", payload.OBItemType)
-          Vue.set(state.currentFile.file[state.isSelected]["allOf"][i], "x-ob-unit", payload.OBUnits)
-          Vue.set(state.currentFile.file[state.isSelected]["allOf"][i], "x-ob-enum", payload.OBEnum)
+          Vue.set(
+            state.currentFile.file[state.isSelected]["allOf"][i],
+            "x-ob-item-type",
+            payload.OBItemType
+          );
+          Vue.set(
+            state.currentFile.file[state.isSelected]["allOf"][i],
+            "x-ob-unit",
+            payload.OBUnits
+          );
+          Vue.set(
+            state.currentFile.file[state.isSelected]["allOf"][i],
+            "x-ob-enum",
+            payload.OBEnum
+          );
         }
-      } 
+      }
     }
   }
 });
