@@ -23,7 +23,7 @@ Component for removing inheritance from objects
             <b-button variant="primary" @click="removeSuperClass" :disabled="emptySuperClassList" size="sm">
                 Remove
             </b-button>
-            <b-button @click="goPreviousView" size="sm">Cancel</b-button>
+            <b-button @click="goPreviousView" size="sm">Back</b-button>
         </div>
     </div>
 </template>

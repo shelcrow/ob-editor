@@ -6,33 +6,54 @@
       :style=" isSelected ? 'background-color: #89CFF0;' : '' "
     >
       <div class="element-div" :style="indent">
-        <span @click="toggleExpandObject">
-          <v-icon
-            v-if="isObj && expandObject"
-            name="minus-square"
-            class="icon-expandable clickable"
-          />
-          <v-icon
-            v-if="isObj && !expandObject"
-            name="plus-square"
-            class="icon-expandable clickable"
-            style="cursor: pointer"
-          />
+        <span @click="toggleExpandDefn">
+
+          <span v-if="isObj">
+            <v-icon
+              v-if="expandDefn"
+              name="minus-square"
+              class="icon-expandable clickable"
+            />
+            <v-icon
+              v-if="!expandDefn"
+              name="plus-square"
+              class="icon-expandable clickable"
+              style="cursor: pointer"
+            />
+          </span>
+
+          <span v-if="isTaxonomyElement">
+            <v-icon
+              name="circle"
+              class="taxonomy-element-icon-expandable clickable"
+              style="cursor: pointer"
+            />            
+          </span>
+
+          <span v-if="isArray && (arrayItemType == 'Object')">
+            <v-icon
+              v-if="expandDefn"
+              name="minus-square"
+              class="icon-expandable clickable"
+            />
+            <v-icon
+              v-if="!expandDefn"
+              name="plus-square"
+              class="icon-expandable clickable"
+              style="cursor: pointer"
+            />        
+          </span>
+
+          <span v-if="isArray && (arrayItemType == 'Taxonomy Element')">
+            <v-icon
+              name="circle"
+              class="taxonomy-element-icon-expandable clickable"
+              style="cursor: pointer"
+            />               
+          </span>
+
         </span>
-        <span @click="toggleExpandElement">
-          <v-icon
-            v-if="isTaxonomyElement && !expandElement"
-            name="circle"
-            class="taxonomy-element-icon-expandable clickable"
-            style="cursor: pointer"
-          />
-          <v-icon
-            v-if="isTaxonomyElement && expandElement"
-            name="circle"
-            class="taxonomy-element-icon-expandable clickable"
-            style="cursor: pointer"
-          />
-        </span>
+
         <span :class="{ subClassSignifier: subClassedNode, importedNodeSignifier: importedNode }">
           <!-- <b-form-checkbox
             style="display:inline"
@@ -41,34 +62,12 @@
             value="name"
             @click="selectTest"
           ></b-form-checkbox>-->
-          {{ shortenName }}
-          <span class="options" >
-            <!-- <label title="Add" @click="showAddChildModal" v-if="children" class="clickable">
-              <v-icon name="plus" />
-            </label> -->
-
-            <!-- <label title="Edit" @click="showEditNodeModal" class="clickable">
-              <v-icon name="edit" />
-            </label>
-
-            <label title="Delete" @click="showDeleteNodeModal" class="clickable">
-              <v-icon name="trash" />
-            </label> -->
+          <span v-if="isArray && !expandDefn">
+            {{ shortenName + " "}}[ {{ arrayItemNameFromRef }} ]
           </span>
-
-          <!-- TOOL TIP 
-            <b-tooltip :target="toolTipID" triggers="hover" placement="right">
-              <span v-if="nodeDescription">
-                {{ nodeDescription }}
-              </span>
-              <span v-else>
-                <p> No documentation available </p>
-              </span>
-            </b-tooltip> -->
-
-
-
-
+          <span v-else>
+            {{ shortenName }}
+          </span>
         </span>
       </div>
     </div>
@@ -78,11 +77,11 @@
     >  -->
     <span v-if="children">
       <span 
-        v-for="arr in sortedObjects"
+        v-for="(arr, index) in sortedObjects"
       > 
         <!-- object -->
         <UploadOBTree
-          v-if="expandObject && arr[3] == 'Object'"
+          v-if="expandDefn && arr[3] == 'Object'"
           :name="arr[0]"
           :children="arr[1].properties"
           :depth="depth + 1"
@@ -96,12 +95,34 @@
           :isTaxonomyElement="false"
           :subClassedNode="arr[2]"
           :referenceFile="arr[4]"
-          :isLocal="arr[5]"          
-      ></UploadOBTree> 
+          :isLocal="arr[5]" 
+        ></UploadOBTree> 
+
+      <!-- array -->
+
+        <UploadOBTree
+          v-else-if="expandDefn && arr[2] == 'Array'"
+          :name="arr[0]"
+          :children="getArrayItemAsChildren(arr[3], arr[5], arr[0])"
+          :depth="depth + 1"
+          :expandAllObjects="expandAllObjects"
+          :nodeDescription="arr[1].description"
+          :isObj="false"
+          parent="root"
+          type="array"
+          :ref="defnRef(arr[0], file.fileName)"
+          :nameRef="defnRef(arr[0], file.fileName)"
+          :file="file"
+          :isArray="true"
+          :arrayItemRef="arr[5]"
+          :arrayItemType="getArrItemType(arr[5])"
+          :referenceFile="arr[3]"
+          :isLocal="arr[4]"
+        ></UploadOBTree> 
 
       <!-- taxonomy element -->
-      <UploadOBTree
-          v-else-if="expandObject && arr[3] == 'TaxonomyElement'"
+        <UploadOBTree
+          v-else-if="expandDefn && arr[3] == 'TaxonomyElement'"
           :isObj="false"
           :name="arr[0]"
           :children="subClassChildren(file.file, arr[4], arr[1], arr[5])"
@@ -115,104 +136,53 @@
           :isTaxonomyElement="true"
           :subClassedNode="arr[2]"
           :referenceFile="arr[5]"
-          :isLocal="arr[6]"          
-      >
-      </UploadOBTree>
+          :isLocal="arr[6]"  
+          :isArrayItem="isArray"         
+        >
+        </UploadOBTree>
 
       <!-- allOf Obj -->
-      <UploadOBTree
-          v-else-if="expandObject && arr[3] == 'ObjWithInherit'"
-          :name="arr[0]"
-          :children="subClassChildren(file.file, arr[4], arr[1], arr[5])"
-          :depth="depth + 1"
-          :nodeDescription="getNodeDescription(arr[1])"
-          :isObj="true"
-          :parent=name
-          type="object"
-          :ref="defnRef(arr[0], file.fileName)"
-          :nameRef="defnRef(arr[0], file.fileName)"
-          :file="file"
-          :isTaxonomyElement="false"
-          :subClassedNode="arr[2]"
-          :referenceFile="arr[5]"
-          :isLocal="arr[6]"          
-      ></UploadOBTree> 
+        <UploadOBTree
+            v-else-if="expandDefn && arr[3] == 'ObjWithInherit'"
+            :name="arr[0]"
+            :children="subClassChildren(file.file, arr[4], arr[1], arr[5])"
+            :depth="depth + 1"
+            :nodeDescription="getNodeDescription(arr[1])"
+            :isObj="true"
+            :parent=name
+            type="object"
+            :ref="defnRef(arr[0], file.fileName)"
+            :nameRef="defnRef(arr[0], file.fileName)"
+            :file="file"
+            :isTaxonomyElement="false"
+            :subClassedNode="arr[2]"
+            :referenceFile="arr[5]"
+            :isLocal="arr[6]"
+            :isArrayItem="isArray"         
+        ></UploadOBTree> 
 
-      <UploadOBTree
-          v-else-if="expandElement && !(arr[3] == 'ObjWithInherit' || arr[3] == 'TaxonomyElement' || arr[3] == 'Object')"
-          :isObj="false"
-          :name="arr[0]"
-          :depth="depth + 1"
-          :nodeDescription="getNodeDescription(arr[1])"
-          :parent="name"
-          type="element"
-          :ref="defnRef(arr[0], file.fileName)"
-          :nameRef="defnRef(arr[0], file.fileName)"
-          :file="file"
-          :isTaxonomyElement="false"
-          :subClassedNode="arr[2]"
-          :referenceFile="arr[3]"
-          :isLocal="arr[4]"          
-      >
-      </UploadOBTree>
+      <!-- for primitives -->
+        <UploadOBTree
+            v-else-if="expandDefn && !(arr[3] == 'ObjWithInherit' || arr[3] == 'TaxonomyElement' || arr[3] == 'Object')"
+            :isObj="false"
+            :name="arr[0]"
+            :depth="depth + 1"
+            :nodeDescription="getNodeDescription(arr[1])"
+            :parent="name"
+            type="element"
+            :ref="defnRef(arr[0], file.fileName)"
+            :nameRef="defnRef(arr[0], file.fileName)"
+            :file="file"
+            :isTaxonomyElement="false"
+            :subClassedNode="arr[2]"
+            :referenceFile="arr[3]"
+            :isLocal="arr[4]"          
+            :isArrayItem="isArray" 
+        >
+        </UploadOBTree>
 
-      <!-- ^^^^ working ^^^^ -->
-
-        <!-- working taxonomy element -->
-        <!-- <UploadOBTree
-          v-if="expandObject && arr[2]=='TaxonomyElement'"
-          :name="arr[0]"
-          :depth="depth + 1"
-          :nodeDescription="arr[1].description"
-          :parent=name
-          type="element"
-          :ref="objectRef(arr[0], file.fileName)"
-          :nameRef="objectRef(arr[0], file.fileName)"
-          :file="file"
-        ></UploadOBTree> -->
-
-        <!-- obj or AllOf obj -->
-        <!-- <UploadOBTree
-          v-if="expandObject && isNodeObject(child_name)"
-          :name="child_name"
-          :depth="depth + 1"
-          :children="returnNodeChildren(child_name, item)"
-          :nodeDescription="item.description"
-          :isObj="true"
-          :parent=name
-          type="object"
-          :ref="objectRef(child_name, file.fileName)"
-          :nameRef="objectRef(child_name, file.fileName)"
-          :subClassedNode="fromSuperClass(item)"
-          :file="file"
-        ></UploadOBTree> -->
-        <!-- TaxonomyElement -->
-
-        <!-- <UploadOBTree
-          v-if="expandObject && arr[2]=='TaxonomyElement'"
-          :name="arr[0]"
-          :depth="depth + 1"
-          :nodeDescription="arr[1].description"
-          :parent=name
-          type="element"
-          :ref="objectRef(arr[0], file.fileName)"
-          :nameRef="objectRef(arr[0], file.fileName)"
-          :subClassedNode="fromSuperClass(item)"
-          :importedNode="fromImport(item)"
-          :file="file"
-        ></UploadOBTree> -->
       </span>
     </span>
-
-    <!-- <UploadOBTree
-      v-if="expandObject"
-      v-for="(item, child_name) in children"
-      :name="child_name"
-      :parent_name="parent_name"
-      ref="child_name"
-      :key="child_name"
-      :depth="depth + 1"
-    ></UploadOBTree> -->
   </div>
 </template>
 
@@ -222,29 +192,40 @@ import * as miscUtilities from "../utils/miscUtilities"
 export default {
   props: ["name", "children", "depth", "expandAllObjects", "parent_name", 
     "nodeDescription", "isObj", "parent", "type", "nameRef", "subClassedNode", 
-    "importedNode", "file", "isTaxonomyElement", "referenceFile", "isLocal"
+    "importedNode", "file", "isTaxonomyElement", "referenceFile", "isLocal", "isArray", 
+    "arrayItemRef", "arrayItemType"
   ],
   name: "UploadOBTree",
   data() {
     return {
       expandObject: true,
+      expandArray: true,
       expandElement: false,
       isObject: Boolean(this.children),
-      parents: this.parent
+      parents: this.parent,
+      sortedObjLen: null,
+      expandDefn: true
     };
   },
   created() {
-    if (this.name == 'TaxonomyElement') {
-      this.expandElement = true
+    if (this.isTaxonomyElement || this.isArray) {
+      this.expandDefn = false
     }
 
-    // if (this.subClassedNode) {
-    //   console.log('sub classed node: ')
-    //   console.log(this.name)
+    // if (this.isArray) {
+    //   console.log('is array in obupload, arrtype: ')
+    //   console.log(this.arrayItemType)
+    // }
+
+    // if (this.isTaxonomyElement) {
+    //   console.log('is a taxonomy element: ' + this.name)
     // }
 
   },
   computed: {
+    arrayItemNameFromRef() {
+      return this.arrayItemRef.slice(this.arrayItemRef.lastIndexOf("/") + 1)
+    },
     shortenName() {
       if (this.name.length > 54) {
         return this.name.slice(0, 54).concat('...')
@@ -291,6 +272,9 @@ export default {
       let refFileContext = 'LOCAL'
       let isTaxonomyElement = false
 
+      let arr_lst = []
+      let arr_item = ''
+
 
       let fileReference = this.file
       // console.log('uploadOBTree, sortedObj')
@@ -307,6 +291,7 @@ export default {
       // }
       // console.log('sorted obj, all children:')
       // console.log(this.children)
+            // console.log('0')
 
       if (this.children) {
           Object.keys(this.children).forEach(key => {
@@ -317,6 +302,7 @@ export default {
             // fileReference = this.children
             refFileContext = 'LOCAL'
             isTaxonomyElement = false
+         
 
             // console.log('#################')
             // console.log('uploadOB, sortedobj, key')
@@ -328,7 +314,6 @@ export default {
             // console.log('children prop')
             // console.log(this.children)
             // console.log('~~~')
-
             if (!this.children[key]["referenceFile"]) {
               // console.log('1')
               defnRef = miscUtilities.getDefnRef(fileReference, key, this.name, this.$store.state.loadedFiles, this.children)
@@ -449,6 +434,12 @@ export default {
                   }
                 }
                 // console.log('all of FIN')
+            } else if (fileReference[key]["type"] == "array") {
+              // console.log('in sorted obj arr')
+              // console.log(fileReference[key])
+              nodeType = 'Array'
+              arr_item = fileReference[key]["items"]["$ref"]
+              arr_lst.push([key, fileReference[key], nodeType, fileReference, isLocal, arr_item])
             } else {
               // console.log('upload ob, sorted obj, type immutable lst')
               immutable_lst.push([key, fileReference[key], fromSuperClass, fileReference, isLocal])
@@ -470,47 +461,31 @@ export default {
 
           // console.log('fin uploadOB sortedObjf')
           // console.log(el_lst.concat(el_lst_SC).concat(obj_lst).concat(obj_lst_SC).concat(immutable_lst))
+                      // console.log('fin')
 
-          return el_lst.concat(el_lst_SC).concat(obj_lst).concat(obj_lst_SC).concat(immutable_lst)
+          // if (this.name == 'TestArray') {
+          //   console.log('children of testarray')
+          //   console.log(el_lst.concat(el_lst_SC).concat(obj_lst).concat(obj_lst_SC).concat(immutable_lst))
+          // }
+
+          let retArr = el_lst.concat(el_lst_SC).concat(obj_lst).concat(obj_lst_SC).concat(arr_lst).concat(immutable_lst)
+          this.sortedObjLen = retArr.length
+          // console.log('sorted obj return arr')
+          // console.log(retArr)
+
+          return retArr
       } 
     },
   },
   methods: {
-    toggleExpandObject() {
-      this.expandObject = !this.expandObject;
-      this.expandElement = !this.expandElement;
+    toggleExpandDefn() {
+      this.expandDefn = !this.expandDefn
     },
-    toggleExpandElement() {
-      this.expandElement = !this.expandElement;
+    getArrayItemAsChildren(file, arrayItemRef, key) {
+      return miscUtilities.getArrayItemAsChildren(file, arrayItemRef, key, this.$store.state.loadedFiles)
     },
-    collapse() {
-      this.expandObject = false;
-    },
-    expand() {
-      this.expandObject = true;
-    },
-    showAddChildModal() {
-      // console.log("Add child");
-      this.$store.commit("showAddChildModal", this.parent_name);
-    },
-    showEditNodeModal() {
-      // console.log("Edit node modal");
-      this.$store.commit({
-        type: "showEditNodeModal",
-        parent_name: this.parent_name,
-        is_object: this.isObject,
-        node_name: this.name
-      });
-    },
-    showDeleteNodeModal() {
-      // console.log("Delete node, from tree:");
-      // console.log("Parent name: " + this.parent);
-      this.$store.commit({
-        type: "showDeleteNodeModal",
-        node_name: this.name,
-        parent_name: this.parent,
-        isObject: this.isObject
-      });
+    getArrItemType(arrItemRef) {
+        return miscUtilities.getArrayItemType(arrItemRef, this.$store.state.loadedFiles, this.$store.state.currentFile)
     },
     toggleSelect() {
       // console.log('in toggleSelect uploadOB: ')
@@ -657,17 +632,6 @@ export default {
         return false
       }
     },
-    fromImport(node) {
-      if (node["$ref"]) {
-        if (node["$ref"].includes("xbrl_all_elements")) {
-          return true
-        } else {
-          return false
-        }
-      } else {
-        return false
-      }
-    },
     getNodeDescription(nodeObj) {
         return nodeObj["description"]
     },
@@ -698,11 +662,9 @@ export default {
   watch: {
     expandAllObjects() {
       if (this.expandAllObjects == true) {
-        this.expandObject = true;
-        this.expandElement = true
+        this.expandDefn = true
       } else {
-        this.expandObject = false;
-        this.expandElement = false
+        this.expandDefn = false
       }
     }
   }

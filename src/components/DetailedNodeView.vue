@@ -71,6 +71,7 @@ export default {
             defnName: '',
             showError: false,
             fields: ['Attributes', 'Values'],
+            refreshFields: true
         }
     },
     methods: {
@@ -132,8 +133,28 @@ export default {
             let temp_superClassListStr = ''
             let temp_ret_obj = null
             let temp_enum = this.$store.state.nodeEnum
+            let arrayItemName = null
+            let defnOBType = this.$store.state.nodeOBType
+            let defnOBUnit = this.$store.state.nodeOBUnit
+            let defnOBEnum = this.$store.state.nodeOBEnum
+
+            this.refreshFields = !this.refreshFields
+
+
             if (!temp_doc) {
                 temp_doc = "Documentation not available"
+            }
+
+            if (!defnOBType) {
+                defnOBType = "None"
+            }
+
+            if (!defnOBUnit) {
+                defnOBUnit = "None"
+            }
+
+            if (!defnOBEnum) {
+                defnOBEnum = "None"
             }
 
             if (!temp_enum) {
@@ -161,8 +182,7 @@ export default {
                 temp_superClassListStr = 'None'
             } else {
                 temp_superClassListStr = temp_superClassList.join(", ")
-            }
-            
+            }            
             // console.log('detailed node view: ' + this.$store.state.nodeEnum)
 
             // console.log('defnDetails 3')
@@ -181,15 +201,26 @@ export default {
                 temp_ret_obj = [
                     { "Attributes": "Name", "Values": this.$store.state.nodeName },
                     { "Attributes": "Type", "Values": this.$store.state.nodeType },
-                    { "Attributes": "Enumeration", "Values": temp_enum },
                     { "Attributes": "Documentation", "Values": temp_doc },
+                    { "Attributes": "Enumeration", "Values": temp_enum },
+                    { "Attributes": "OB Item Type", "Values": defnOBType },
+                    { "Attributes": "OB Unit", "Values": defnOBUnit },
+                    { "Attributes": "OB Enumeration", "Values": defnOBEnum },
                     { "Attributes": "Superclasses", "Values": temp_superClassListStr }
                 ]                
+            } else if (defnDoc[this.$store.state.isSelected]["type"] == "array") {
+                arrayItemName = defnDoc[this.$store.state.isSelected]["items"]["$ref"].slice(
+                                defnDoc[this.$store.state.isSelected]["items"]["$ref"].lastIndexOf("/") + 1)
+
+                temp_ret_obj = [
+                    { "Attributes": "Name", "Values": this.$store.state.nodeName },
+                    { "Attributes": "Type", "Values": this.$store.state.nodeType },
+                    { "Attributes": "Array Item", "Values": arrayItemName}
+                ]  
             } else {
                 temp_ret_obj = [
                     { "Attributes": "Name", "Values": this.$store.state.nodeName },
                     { "Attributes": "Type", "Values": this.$store.state.nodeType },
-                    { "Attributes": "Enumeration", "Values": temp_enum },
                     { "Attributes": "Documentation", "Values": temp_doc }
                 ]                
             }

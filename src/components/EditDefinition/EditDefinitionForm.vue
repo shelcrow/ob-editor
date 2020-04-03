@@ -41,7 +41,7 @@ Child of EditDefinition, edit definition form
                 <span v-if="!hasSubmitted">Submit</span>
                 <span v-else>Submitted!</span>
             </b-button>
-            <b-button @click="goPreviousView" size="sm">Cancel</b-button>
+            <b-button @click="goPreviousView" size="sm">Back</b-button>
         </div>
     </div>
 </template>

@@ -44,7 +44,7 @@ Component for adding inheritance to objects
                     Add
                 </b-button>
             </span>
-            <b-button @click="goPreviousView" size="sm">Cancel</b-button>
+            <b-button @click="goPreviousView" size="sm">Back</b-button>
         </div>
     </div>
 </template>
@@ -277,20 +277,20 @@ export default {
             return arr
         },
         maxInheritance() {
-            console.log('in add inheritance, maxInheritance')
+            // console.log('in add inheritance, maxInheritance')
             if (this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"] !== undefined) {
                 console.log(this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"].length)
                 if (this.$store.state.currentFile.file[this.$store.state.isSelected]["allOf"].length > 1) {
-                    console.log('max inheritance: true')
+                    // console.log('max inheritance: true')
 
                     return true
                 } else {
-                    console.log('max inheritance: false')
+                    // console.log('max inheritance: false')
 
                     return false
                 }
             } else {
-                console.log('max inheritance: false')
+                // console.log('max inheritance: false')
 
                 return false;
             }

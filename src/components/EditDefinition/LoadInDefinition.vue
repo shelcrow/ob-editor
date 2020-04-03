@@ -27,7 +27,7 @@
         <div id="load-in-defn-footer">
             <span id="edit-form-buttons">
                 <b-button @click="loadInDefinition" :disabled="!selectedDefnName" size="sm" variant="primary">Load In</b-button>
-                <b-button @click="showDetailedView" size="sm">Cancel</b-button>
+                <b-button @click="showDetailedView" size="sm">Back</b-button>
                 <!-- <b-alert :show="!preSubmit" variant="success" dismissible @dismissed="showDetailedView">
                     Create element was successful.
                 </b-alert> -->

@@ -2,7 +2,6 @@ import Vue from "vue";
 import Vuex from "vuex";
 import * as JSONEditor from '../utils/JSONEditor.js'
 import FileSaver from "file-saver"
-import XBRLFile from "../assets/xbrl_all_elements.json"
 
 Vue.use(Vuex);
 
@@ -61,7 +60,13 @@ export default new Vuex.Store({
 
     defnIsLocal: null,
 
-    activeEditingView: 'EditDefinitionFormDisabled'
+    activeEditingView: 'EditDefinitionFormDisabled',
+
+    // after abbrev update
+
+    nodeOBType: '',
+    nodeOBUnit: '',
+    nodeOBEnum: '',
   },
   mutations: {
     /* 
@@ -177,20 +182,43 @@ export default new Vuex.Store({
       state.selectedDefnRefFile = payload.referenceFile
       // console.log('does this reset view')
       state.activeEditingView = 'EditDefinitionFormDisabled'
-
+      
 
       if (state.selectedDefnRefFile[state.isSelected]["allOf"]) {
         for (let i in state.selectedDefnRefFile[state.isSelected]["allOf"]) {
           if (state.selectedDefnRefFile[state.isSelected]["allOf"][i]["type"]) {
+
             if (state.selectedDefnRefFile[state.isSelected]["allOf"][i]["enum"]) {
               state.nodeEnum = state.selectedDefnRefFile[state.isSelected]["allOf"][i]["enum"]
             } else {
               state.nodeEnum = null
             }
+
+            if (state.selectedDefnRefFile[state.isSelected]["allOf"][i]["x-ob-item-type"]) {
+              state.nodeOBType = state.selectedDefnRefFile[state.isSelected]["allOf"][i]["x-ob-item-type"]
+            } else {
+              state.nodeOBType = ''
+            }
+
+            if (state.selectedDefnRefFile[state.isSelected]["allOf"][i]["x-ob-unit"]) {
+              state.nodeOBUnit = state.selectedDefnRefFile[state.isSelected]["allOf"][i]["x-ob-unit"]
+            } else {
+              state.nodeOBUnit = ''
+            }
+
+            if (state.selectedDefnRefFile[state.isSelected]["allOf"][i]["x-ob-enum"]) {
+              state.nodeOBEnum = state.selectedDefnRefFile[state.isSelected]["allOf"][i]["x-ob-enum"]
+            } else {
+              state.nodeOBEnum = ''
+            }
+
           }
         }   
       } else {
         state.nodeEnum = null
+        state.nodeOBEnum = ''
+        state.nodeOBType = ''
+        state.nodeOBUnit = ''
       }
 
       // if (state.currentFile.file[state.isSelected]["enum"]) {
@@ -297,23 +325,79 @@ export default new Vuex.Store({
 
     createDefinition(state, payload) {
       let defn_attr = {}
+
       if (payload.definitionType == 'OB Object') {
         defn_attr = {
           "type": "object",
           "description": payload.definitionDescription,
           "properties": {}
         }
-      } else {
+      } else if (payload.definitionType == 'OB Taxonomy Element String') {
         defn_attr = {
           "allOf": [
             {
-                "$ref": "Master-Solar-Taxonomy-030420.json#/components/schemas/TaxonomyElement"
+                "$ref": "Master-Solar-Taxonomy-040120.json#/components/schemas/TaxonomyElementString"
             },
             {
                 "type": "object",
-                "description": payload.definitionDescription
+                "description": payload.definitionDescription,
+                "x-ob-item-type": payload.OBItemType,
+                "x-ob-unit": payload.OBUnits,
+                "x-ob-enum": payload.OBEnum
             }
           ]
+        }
+      } else if (payload.definitionType == 'OB Taxonomy Element Number') {
+        defn_attr = {
+          "allOf": [
+            {
+                "$ref": "Master-Solar-Taxonomy-040120.json#/components/schemas/TaxonomyElementNumber"
+            },
+            {
+                "type": "object",
+                "description": payload.definitionDescription,
+                "x-ob-item-type": payload.OBItemType,
+                "x-ob-unit": payload.OBUnits,
+                "x-ob-enum": payload.OBEnum
+            }
+          ]
+        }
+      } else if (payload.definitionType == 'OB Taxonomy Element Integer') {
+        defn_attr = {
+          "allOf": [
+            {
+                "$ref": "Master-Solar-Taxonomy-040120.json#/components/schemas/TaxonomyElementInteger"
+            },
+            {
+                "type": "object",
+                "description": payload.definitionDescription,
+                "x-ob-item-type": payload.OBItemType,
+                "x-ob-unit": payload.OBUnits,
+                "x-ob-enum": payload.OBEnum
+            }
+          ]
+        }
+      } else if (payload.definitionType == 'OB Taxonomy Element Boolean') {
+        defn_attr = {
+          "allOf": [
+            {
+                "$ref": "Master-Solar-Taxonomy-040120.json#/components/schemas/TaxonomyElementBoolean"
+            },
+            {
+                "type": "object",
+                "description": payload.definitionDescription,
+                "x-ob-item-type": payload.OBItemType,
+                "x-ob-unit": payload.OBUnits,
+                "x-ob-enum": payload.OBEnum
+            }
+          ]
+        }
+      } else if (payload.definitionType == 'OB Array') {
+        defn_attr = {
+          "type": "array",
+          "items" : {
+            "$ref" : payload.arrayItemFileName + "#/components/schemas/" + payload.arrayItemDefnName
+          }
         }
       }
 
@@ -347,6 +431,11 @@ export default new Vuex.Store({
       // console.log(state.loadedFiles)
 
     },
+    removeFile(state, fileName) {
+      if (!(fileName == 'Master-Solar-Taxonomy-040120.json' || fileName == 'Master-OB-OpenAPI-030420.json')) {
+        delete state.loadedFiles[fileName]
+      }
+    },
     loadInDefinition(state, payload) {
       let defnName = payload.defnName
       let defnFile = payload.defnFile
@@ -357,6 +446,24 @@ export default new Vuex.Store({
 
       JSONEditor.loadInDefinition(currentFile, defnName, defnFile)
 
+    },
+    editItemType(state, payload) {
+      console.log(payload)
+      // OBItemType: this.selectedOBItemType,
+      // OBUnits: this.selectedOBUnits,
+      // OBEnum: this.selectedOBEnum      
+      console.log(state.currentFile.file[state.isSelected])
+
+      state.nodeOBType = payload.OBItemType
+      state.nodeOBUnit = payload.OBUnits
+      state.nodeOBEnum = payload.OBEnum
+      for (let i in state.currentFile.file[state.isSelected]["allOf"]) {
+        if (state.currentFile.file[state.isSelected]["allOf"][i]["type"]) {
+          Vue.set(state.currentFile.file[state.isSelected]["allOf"][i], "x-ob-item-type", payload.OBItemType)
+          Vue.set(state.currentFile.file[state.isSelected]["allOf"][i], "x-ob-unit", payload.OBUnits)
+          Vue.set(state.currentFile.file[state.isSelected]["allOf"][i], "x-ob-enum", payload.OBEnum)
+        }
+      } 
     }
   }
 });

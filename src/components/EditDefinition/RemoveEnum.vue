@@ -16,7 +16,7 @@ Component for removing enumeration from definitions
             <b-button variant="danger" @click="removeEnum" size="sm">
                 Remove
             </b-button>
-            <b-button @click="goPreviousView" size="sm">Cancel</b-button>
+            <b-button @click="goPreviousView" size="sm">Back</b-button>
         </div>
     </div>
 </template>

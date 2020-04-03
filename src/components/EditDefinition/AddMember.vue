@@ -40,7 +40,7 @@ Component for adding members to objects
                     <span v-if="!hasSubmitted">Add</span>
                     <span v-else>Add another</span>
                 </b-button>
-                <b-button @click="goPreviousView" size="sm">Cancel</b-button>
+                <b-button @click="goPreviousView" size="sm">Back</b-button>
             </span>
         </div>
     </div>

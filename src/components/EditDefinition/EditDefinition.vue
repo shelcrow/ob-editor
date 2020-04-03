@@ -10,7 +10,7 @@ Is the parent of all the editing components
 
         <span class="edit-form-buttons" v-if="$store.state.activeEditingView == 'EditDefinitionFormDisabled'">
             <b-button class="edit-btn" variant='secondary' @click="editDefinition">
-                Edit Attributes
+                Edit Description
             </b-button>
             <b-button class="edit-btn" v-if="$store.state.nodeType == 'object' && !$store.state.isTaxonomyElement" variant='secondary' @click="addMember">
                 Add member
@@ -26,6 +26,9 @@ Is the parent of all the editing components
             </b-button>
             <b-button class="edit-btn" v-if="$store.state.nodeType == 'element' || $store.state.isTaxonomyElement" variant='secondary' @click="removeEnum">
                 Remove Enumeration
+            </b-button>
+            <b-button class="edit-btn" v-if="$store.state.nodeType == 'element' || $store.state.isTaxonomyElement" variant='secondary' @click="editItemType">
+                Edit Item Type
             </b-button>
         </span>
         <div class="previous-view-button" v-if="$store.state.activeEditingView == 'EditDefinitionFormDisabled'">
@@ -43,12 +46,13 @@ import EditDefinitionFormDisabled from "./EditDefinitionFormDisabled.vue"
 import RemoveInheritance from "./RemoveInheritance.vue"
 import AddEnum from "./AddEnum.vue"
 import RemoveEnum from "./RemoveEnum.vue"
+import EditItemType from "./EditItemType.vue"
 
 import * as JSONEditor from "../../utils/JSONEditor.js"
 import * as miscUtilities from "../../utils/miscUtilities.js"
 
 export default {
-    components: { AddInheritance, AddMember, EditDefinitionForm, EditDefinitionFormDisabled, RemoveInheritance, AddEnum, RemoveEnum  },
+    components: { AddInheritance, AddMember, EditDefinitionForm, EditDefinitionFormDisabled, RemoveInheritance, AddEnum, RemoveEnum, EditItemType},
     data() {
         return {
             preSubmit: true,
@@ -68,8 +72,8 @@ export default {
             this.addingChild = false
         },
         backToPrevView() {
-                this.$store.state.showEditNodeView = false
-                this.$store.state.showDetailedView = true
+            this.$store.state.showEditNodeView = false
+            this.$store.state.showDetailedView = true
         },
         editNodeSubmit() {
             this.preSubmit = false
@@ -103,6 +107,9 @@ export default {
         },
         removeEnum() {
             this.$store.state.activeEditingView = "RemoveEnum"
+        },
+        editItemType() {
+            this.$store.state.activeEditingView = "EditItemType"
         }
     },
     computed: {

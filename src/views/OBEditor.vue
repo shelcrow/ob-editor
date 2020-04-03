@@ -54,6 +54,28 @@
                                     :isLocal="arr[4]"
                                 ></UploadOBTree> 
 
+                                <UploadOBTree
+                                    v-else-if="arr[2] == 'Array'"
+                                    :name="arr[0]"
+                                    :children="getArrayItemAsChildren(arr[3], arr[5], arr[0])"
+                                    :depth="0"
+                                    :expandAllObjects="expandAllObjects"
+                                    :nodeDescription="arr[1].description"
+                                    :isObj="false"
+                                    parent="root"
+                                    type="array"
+                                    :ref="defnRef(arr[0], item.fileName)"
+                                    :nameRef="defnRef(arr[0], item.fileName)"
+                                    :file="computedFile"
+                                    :isArray="true"
+                                    :arrayItemRef="arr[5]"
+                                    :arrayItemType="getArrItemType(arr[5])"
+                                    :referenceFile="arr[3]"
+                                    :isLocal="arr[4]"
+                                ></UploadOBTree> 
+
+                       <!-- arr_lst.push([key, fileReference[key], nodeType, fileReference, isLocal, arr_item]) -->
+
                                 <!-- taxonomy element -->
                                 <UploadOBTree
                                     v-else-if="arr[2] == 'TaxonomyElement'"
@@ -298,25 +320,21 @@
     </div>
     <div class="element-editor-header">
         <div class="editor-header">
-            <h4 v-show="$store.state.showDetailedView">Detailed View</h4>
-            <h4 v-show="$store.state.showEditNodeView">Edit <strong>{{ $store.state.isSelected}}</strong> </h4>
+            <h4 v-if="$store.state.showDetailedView">Detailed View</h4>
+            <h4 v-if="$store.state.showEditNodeView">Edit <strong>{{ $store.state.isSelected}}</strong> </h4>
             <h4 v-show="$store.state.showCreateDefinitionForm">Create Definition</h4>
-            <h4 v-show="$store.state.showLoadInDefinitionForm">Load In Definition</h4>
+            <h4 v-if="$store.state.showLoadInDefinitionForm">Load In Definition</h4>
         </div>
         <div class="download-button-container">
             <b-button variant="primary" v-b-modal.export-modal @click="exportModalOpened" :disabled="!$store.state.currentFile">Export</b-button>
         </div>
         </div>
         <div class="element-editor-body">
-            <!-- TODO: refactor using dynamic components -->
-            <DetailedNodeView v-show="$store.state.showDetailedView"/>
-            <!-- <EditNodeForm v-show="$store.state.showEditNodeView" /> -->
-            <EditDefinition v-show="$store.state.showEditNodeView" />
+            <DetailedNodeView v-if="$store.state.showDetailedView" />
+            <EditDefinition v-if="$store.state.showEditNodeView" />
             <CreateDefinitionForm v-show="$store.state.showCreateDefinitionForm" />
-            <LoadInDefinition v-show="$store.state.showLoadInDefinitionForm" />
+            <LoadInDefinition v-if="$store.state.showLoadInDefinitionForm" />
         </div>
-        <!-- <div class="element-editor-footer">
-        </div> -->
 
         <!-- Modals -->
         <div class="element-editor-footer">
@@ -334,7 +352,7 @@
                     </div>
                 </template>
                 <template v-slot:default>
-                    Are you sure you want to close the file? Any changes not exported will not be saved. 
+                    Are you sure you want to close the file? Any changes not exported will not be saved. Make sure this file is not being referenced in another loaded files or it may cause errors.
                 </template>
             </b-modal>            
         </span>
@@ -352,9 +370,8 @@ import ExportFormModal from "../components/forms/ExportFormModal"
 import LoadInDefinition from "../components/EditDefinition/LoadInDefinition"
 import EditDefinition from "../components/EditDefinition/EditDefinition"
 import * as miscUtilities from "../utils/miscUtilities"
-import XBRLFile from "../assets/xbrl_all_elements.json"
 import * as JSONEditor from '../utils/JSONEditor.js'
-import SolarTaxonomyMaster from "@/assets/master_files/Master-Solar-Taxonomy-030420.json"
+import SolarTaxonomyMaster from "@/assets/master_files/Master-Solar-Taxonomy-040120.json"
 import OBOpenAPIMaster from "@/assets/master_files/Master-OB-OpenAPI-030420.json"
 
 
@@ -362,10 +379,10 @@ export default {
     components: { UploadOBTree, DetailedNodeView, CreateDefinitionForm, ExportFormModal, EditDefinition, LoadInDefinition },
     created() {
         // console.log(SolarTaxonomyMaster)
-        this.$store.state.loadedFiles["Master-Solar-Taxonomy-030420.json"] = {
+        this.$store.state.loadedFiles["Master-Solar-Taxonomy-040120.json"] = {
             fullFileForExport: SolarTaxonomyMaster,
             file: SolarTaxonomyMaster.components.schemas,
-            fileName: "Master-Solar-Taxonomy-030420.json"
+            fileName: "Master-Solar-Taxonomy-040120.json"
         }
 
         this.$store.state.loadedFiles["Master-OB-OpenAPI-030420.json"] = {
@@ -394,9 +411,9 @@ export default {
             selectedDependencyFileName: null,
             selectedDependencyInfo: null,
             dbList: {
-                "Master-Solar-Taxonomy-030420.json": {
+                "Master-Solar-Taxonomy-040120.json": {
                     information: "This is the latest release of the Orange Button Solar Taxonomy",
-                    fileName: "Master-Solar-Taxonomy-030420.json"
+                    fileName: "Master-Solar-Taxonomy-040120.json"
                 },
                 "Master-OB-OpenAPI-030420.json": {
                     information: "This is the latest release of the Orange Button OpenAPI Master Document",
@@ -416,6 +433,9 @@ export default {
         };
     },
     methods: {
+        getArrItemType(arrItemRef) {
+            return miscUtilities.getArrayItemType(arrItemRef, this.$store.state.loadedFiles, this.$store.state.currentFile)
+        },
         fileToJSON() {
             if (this.file) {
                 let reader = new FileReader();
@@ -533,6 +553,9 @@ export default {
             // console.log('~~~~')
             return miscUtilities.getSuperClassChildren(file, superClassRef, subClassObj, null, key, this.$store.state.loadedFiles)
         },
+        getArrayItemAsChildren(file, arrayItemRef, key) {
+            return miscUtilities.getArrayItemAsChildren(file, arrayItemRef, key, this.$store.state.loadedFiles)
+        },
 
       // keep track of what tab you're in to show the right detailed view
         changeTabState(tabName) {
@@ -621,6 +644,7 @@ export default {
             this.$bvModal.hide('modal-close-file-warning')
         },
         closeTab(x) {            
+            this.$store.commit("removeFile", this.$store.state.currentFile.fileName)
             this.$store.state.currentFile = null
             this.$store.state.fileTabs.splice(x, 1)
             this.$store.state.currentFile = this.$store.state.fileTabs[this.$store.state.currentTabIndexFileEditor]
@@ -818,10 +842,12 @@ export default {
 
             let obj_lst = []
             let el_lst = []
+            let arr_lst = []
+            let arr_item = ''
             let immutable_lst = []
             let superClass_lst = []
             let subClass_obj = {}
-            let immutable_OB = ["Value", "Unit", "Decimals", "Precision", "TaxonomyElement"]
+            let immutable_OB = ["Value", "Unit", "Decimals", "Precision", "TaxonomyElementString", "TaxonomyElementNumber", "TaxonomyElementInteger", "TaxonomyElementBoolean"]
             let nodeType = ''
             let defnRef = ''
             let refFileContext = 'LOCAL'
@@ -867,6 +893,8 @@ export default {
                     // console.log('refFileContext, obeditor: ')
                     // console.log(refFileContext)
                     // console.log('sorted obj: defn ref: ' + defnRef)
+                    // console.log('+++++++++++++++++++++')
+
 
                     if (refFileContext != "LOCAL") {
                         // console.log('getting file reference: ')
@@ -921,6 +949,12 @@ export default {
                             nodeType = 'ObjWithInherit'
                             obj_lst.push([key, subClass_obj, nodeType, superClass_lst, fileReference, isLocal])  
                         }
+                    } else if (fileReference[key]["type"] == "array") {
+                        // console.log('in sorted obj arr')
+                        nodeType = 'Array'
+                        arr_item = fileReference[key]["items"]["$ref"]
+                        arr_lst.push([key, fileReference[key], nodeType, fileReference, isLocal, arr_item])
+                        
                     } else {
                         immutable_lst.push([key, fileReference[key], fileReference, isLocal])
                     }
@@ -929,7 +963,8 @@ export default {
                 obj_lst.sort()
                 el_lst.sort()
                 immutable_lst.sort()
-                let returnArr = obj_lst.concat(el_lst).concat(immutable_lst)
+                arr_lst.sort()
+                let returnArr = obj_lst.concat(arr_lst).concat(el_lst).concat(immutable_lst)
 
                 returnArr = returnArr.filter( node => {
                     return node[0].includes(this.treeSearchTerm)

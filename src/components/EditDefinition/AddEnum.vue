@@ -22,8 +22,7 @@ Component for adding enumeration to definitions
             </span>
         </div>
         <div class="editor-function-footer-container">
-
-            <b-button @click="goPreviousView" size="sm">Cancel</b-button>
+            <b-button @click="goPreviousView" size="sm">Back</b-button>
         </div>
     </div>
 </template>
@@ -54,13 +53,6 @@ export default {
             if (this.$store.state.nodeEnum == "None") {
                 return []
             } else {
-                // for (let i in this.$store.state.nodeEnum) {
-                //     if (typeof(i) == "string") {
-                //         tmp_enum_str.push(this.$store.state.nodeEnum[i])
-                //     }
-                // }
-                // console.log(tmp_enum_str)
-                // return tmp_enum_str.join(' ')
                 return this.$store.state.nodeEnum
             }
         }
